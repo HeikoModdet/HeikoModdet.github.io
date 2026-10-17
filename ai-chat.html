@@ -41,7 +41,18 @@
     </header>
 
     <div class="chat-container" id="chatContainer">
-        <div class="message bot">Hallo Heiko! Ich lade gerade das lokale KI-Modell direkt in deinen Browser (Llama 3.2 1B via WebLLM). Das kann beim ersten Start einen Moment dauern...</div>
+        <div class="message bot" id="welcomeMsg">Hallo Heiko! Ich lade das lokale KI-Modell (Llama 3.2 1B) direkt in deinen Browser. Bitte warte kurz...</div>
+    </div>
+
+    <!-- Fortschrittbalken -->
+    <div id="progressContainer" style="padding: 10px 16px; background: #1e293b; border-top: 1px solid #334155; display: flex; flex-direction: column; gap: 6px; flex-shrink: 0;">
+        <div style="display: flex; justify-content: space-between; font-size: 12px; color: #94a3b8;">
+            <span id="progressText">Initialisiere WebGPU...</span>
+            <span id="progressPercent">0%</span>
+        </div>
+        <div style="width: 100%; height: 6px; background: #0f172a; border-radius: 3px; overflow: hidden;">
+            <div id="progressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #3b82f6, #8b5cf6); transition: width 0.2s ease;"></div>
+        </div>
     </div>
 
     <div class="input-container">
@@ -57,6 +68,11 @@
         const sendBtn = document.getElementById('sendBtn');
         const statusText = document.getElementById('statusText');
         const avatarRing = document.getElementById('avatarRing');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        const progressPercent = document.getElementById('progressPercent');
+        const welcomeMsg = document.getElementById('welcomeMsg');
 
         let engine = null;
         const selectedModel = "Llama-3.2-1B-Instruct-q4f16_1-MLC";
@@ -90,20 +106,36 @@
                     selectedModel,
                     {
                         initProgressCallback: (report) => {
+                            progressText.textContent = report.text;
+                            // Versuche Prozentsatz aus dem Text zu extrahieren falls vorhanden
+                            const match = report.text.match(/(\d+)%/);
+                            if (match) {
+                                const pct = match[1];
+                                progressBar.style.width = pct + '%';
+                                progressPercent.textContent = pct + '%';
+                            } else {
+                                // Pulsierender Fortschritt bei ungenauen Berichten
+                                progressBar.style.width = '70%';
+                                progressPercent.textContent = '...';
+                            }
                             statusText.textContent = report.text;
                         }
                     }
                 );
+                
+                // Ausblenden des Fortschrittbalkens nach Erfolg
+                progressContainer.style.display = 'none';
                 setStatus("Lokales KI-Modell bereit");
                 userInput.disabled = false;
                 userInput.placeholder = "Schreibe dem lokalen KI-Modell...";
                 sendBtn.disabled = false;
                 sendBtn.textContent = "➤";
-                addMessage("Das lokale KI-Modell ist geladen und läuft komplett privat in deinem Browser! Wie kann ich dir helfen?", "bot");
+                welcomeMsg.textContent = "Das lokale KI-Modell ist geladen und läuft komplett privat in deinem Browser! Wie kann ich dir helfen?";
             } catch (err) {
                 console.error(err);
-                setStatus("Fehler beim Laden (WebGPU benötigt)");
-                addMessage("Hinweis: Dein Browser/Gerät unterstützt möglicherweise kein WebGPU für lokale LLMs. Fallback auf Standard-Modus aktiv.", "bot");
+                progressContainer.style.display = 'none';
+                setStatus("Fehler (WebGPU benötigt)");
+                welcomeMsg.textContent = "Hinweis: Dein Browser/Gerät unterstützt möglicherweise kein WebGPU. Fallback-Modus aktiv.";
                 userInput.disabled = false;
                 userInput.placeholder = "Nachricht eingeben...";
                 sendBtn.disabled = false;
