@@ -60,25 +60,23 @@
         <button id="sendBtn" onclick="sendMessage()" disabled>⌛</button>
     </div>
 
-    <script>
+    <script type="module">
+        import { CreateWebWorkerMLCEngine } from "https://esm.run/@mlc-ai/web-llm";
+
         const chatContainer = document.getElementById('chatContainer');
         const userInput = document.getElementById('userInput');
         const sendBtn = document.getElementById('sendBtn');
         const statusText = document.getElementById('statusText');
         const avatarRing = document.getElementById('avatarRing');
         const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        const progressPercent = document.getElementById('progressPercent');
         const welcomeMsg = document.getElementById('welcomeMsg');
 
-        // Direkt ohne WebLLM-Worker-Hänger auf robusten lokalen Chat-Modus umschalten
-        setTimeout(() => {
-            progressContainer.style.display = 'none';
-            statusText.textContent = "Bereit & Offline-fähig";
-            userInput.disabled = false;
-            userInput.placeholder = "Nachricht eingeben...";
-            sendBtn.disabled = false;
-            sendBtn.textContent = "➤";
-            welcomeMsg.textContent = "Hallo Heiko! Ich bin dein lokaler Assistent. Wie kann ich dir heute helfen?";
-        }, 500);
+        let engine = null;
+        // Das absolut kleinste und schnellste LLM für Browser (SmolLM2-135M ist extrem winzig und lädt sekundenschnell)
+        const selectedModel = "SmolLM2-135M-Instruct-q4f16_1-MLC";
 
         function addMessage(text, sender) {
             const div = document.createElement('div');
@@ -89,40 +87,97 @@
             return div;
         }
 
-        window.sendMessage = function() {
+        function setStatus(text, thinking = false) {
+            statusText.textContent = text;
+            avatarRing.style.animationDuration = thinking ? "0.6s" : "2s";
+        }
+
+        async function initLLM() {
+            try {
+                setStatus("Lade winziges lokales LLM...");
+                engine = await CreateWebWorkerMLCEngine(
+                    new Worker(
+                        URL.createObjectURL(new Blob([`
+                            import { WebWorkerMLCEngineHandler } from "https://esm.run/@mlc-ai/web-llm";
+                            const handler = new WebWorkerMLCEngineHandler();
+                            onmessage = (msg) => handler.onmessage(msg);
+                        `], { type: "javascript" })),
+                        { type: "module" }
+                    ),
+                    selectedModel,
+                    {
+                        initProgressCallback: (report) => {
+                            progressText.textContent = report.text;
+                            const match = report.text.match(/(\d+)%/);
+                            if (match) {
+                                const pct = match[1];
+                                progressBar.style.width = pct + '%';
+                                progressPercent.textContent = pct + '%';
+                            } else {
+                                progressBar.style.width = '60%';
+                                progressPercent.textContent = '...';
+                            }
+                            statusText.textContent = report.text;
+                        }
+                    }
+                );
+                
+                progressContainer.style.display = 'none';
+                setStatus("Lokales LLM bereit");
+                userInput.disabled = false;
+                userInput.placeholder = "Schreibe mit SmolLM2...";
+                sendBtn.disabled = false;
+                sendBtn.textContent = "➤";
+                welcomeMsg.textContent = "Das winzige lokale LLM (SmolLM2-135M) ist geladen! Du kannst direkt losschreiben.";
+            } catch (err) {
+                console.error(err);
+                progressContainer.style.display = 'none';
+                setStatus("WebGPU nicht verfügbar");
+                welcomeMsg.textContent = "Dein Browser unterstützt kein WebGPU für lokale LLMs. Bitte nutze einen modernen Browser.";
+                userInput.disabled = false;
+                userInput.placeholder = "Nachricht eingeben...";
+                sendBtn.disabled = false;
+                sendBtn.textContent = "➤";
+            }
+        }
+
+        window.sendMessage = async function() {
             const text = userInput.value.trim();
             if (!text) return;
 
             addMessage(text, 'user');
             userInput.value = '';
-            statusText.textContent = "Denkt nach...";
-            avatarRing.style.animationDuration = "0.6s";
+            setStatus("Generiert...", true);
 
-            setTimeout(() => {
-                let reply = "Das ist ein sehr interessanter Punkt! Lass uns das schrittweise angehen. Was genau möchtest du dazu wissen oder umsetzen?";
-                const lower = text.toLowerCase();
-                
-                if (lower.includes('hallo') || lower.includes('hi') || lower.includes('guten tag')) {
-                    reply = "Hallo Heiko! Schön, dass du da bist. Wie kann ich dir heute bei deinen Projekten oder Ideen helfen?";
-                } else if (lower.includes('bastel') || lower.includes('vorlagen') || lower.includes('helpfully')) {
-                    reply = "Ah, rund um Bastelvorlagen und kreative DIY-Projekte (wie von helpfully.de) habe ich jede Menge Ideen auf Lager! Suchst du nach einer bestimmten Vorlage oder einem Thema für Kinder?";
-                } else if (lower.includes('hilfe') || lower.includes('was kannst du')) {
-                    reply = "Ich bin dein persönlicher KI-Assistent direkt auf dem Smartphone! Du kannst mich zu allen möglichen Themen befragen, Ideen entwickeln, Texte schreiben oder kreative Projekte planen.";
-                } else if (lower.includes('witz') || lower.includes('erzähle')) {
-                    reply = "Warum können Programmierer die Natur nicht leiden? – Weil sie zu viele Bugs hat! 😄";
-                } else if (lower.length > 15) {
-                    reply = `Das klingt nach einem spannenden Projekt: "${text}". Um das optimal umzusetzen, könnten wir das in kleine Teilschritte zerlegen. Sollen wir direkt mit dem ersten Schritt starten?`;
+            if (engine) {
+                const botMsgDiv = addMessage("", 'bot');
+                try {
+                    const messages = [
+                        { role: "system", content: "You are a helpful AI assistant." },
+                        { role: "user", content: text }
+                    ];
+                    const chunks = await engine.chat.completions.create({ messages, stream: true });
+                    let reply = "";
+                    for await (const chunk of chunks) {
+                        reply += chunk.choices[0]?.delta?.content || "";
+                        botMsgDiv.textContent = reply;
+                        chatContainer.scrollTop = chatContainer.scrollHeight;
+                    }
+                } catch (err) {
+                    botMsgDiv.textContent = "Fehler: " + err.message;
                 }
-
-                addMessage(reply, 'bot');
-                statusText.textContent = "Bereit & Offline-fähig";
-                avatarRing.style.animationDuration = "2s";
-            }, 800);
+                setStatus("Bereit");
+            } else {
+                addMessage("Kein lokales Modell geladen.", 'bot');
+                setStatus("Bereit");
+            }
         };
 
         userInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') sendMessage();
         });
+
+        initLLM();
     </script>
 </body>
 </html>
