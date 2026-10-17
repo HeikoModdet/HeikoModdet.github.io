@@ -77,15 +77,21 @@
             setThinking(true);
 
             setTimeout(() => {
-                let reply = "Das ist eine spannende Anfrage! Ich habe das Thema direkt notiert.";
+                let reply = "Das ist ein sehr interessanter Punkt! Lass uns das schrittweise angehen. Was genau möchtest du dazu wissen oder umsetzen?";
                 const lower = text.toLowerCase();
-                if (lower.includes('hallo') || lower.includes('hi')) {
-                    reply = "Hi Heiko! Schön, dass du da bist. Was machen wir heute?";
+                
+                if (lower.includes('hallo') || lower.includes('hi') || lower.includes('guten tag')) {
+                    reply = "Hallo Heiko! Schön, dass du da bist. Wie kann ich dir heute bei deinen Projekten oder Ideen helfen?";
                 } else if (lower.includes('bastel') || lower.includes('vorlagen') || lower.includes('helpfully')) {
-                    reply = "Perfekt! Rund um Bastelvorlagen, Deko und Kreativ-Projekte (wie von helpfully.de) unterstütze ich dich jederzeit gerne bei der Ideensuche!";
-                } else if (lower.includes('hilfe')) {
-                    reply = "Ich bin dein mobiler PWA-Assistent. Du kannst mich direkt vom Smartphone-Homescreen aus starten und chatten!";
+                    reply = "Ah, rund um Bastelvorlagen und kreative DIY-Projekte (wie von helpfully.de) habe ich jede Menge Ideen auf Lager! Suchst du nach einer bestimmten Vorlage oder einem Thema für Kinder?";
+                } else if (lower.includes('hilfe') || lower.includes('was kannst du')) {
+                    reply = "Ich bin dein persönlicher KI-Assistent direkt auf dem Smartphone! Du kannst mich zu allen möglichen Themen befragen, Ideen entwickeln, Texte schreiben oder kreative Projekte planen.";
+                } else if (lower.includes('witz') || lower.includes('erzähle')) {
+                    reply = "Warum können Programmierer die Natur nicht leiden? – Weil sie zu viele Bugs hat! 😄";
+                } else if (lower.length > 15) {
+                    reply = `Das klingt nach einem spannenden Projekt: "${text}". Um das optimal umzusetzen, könnten wir das in kleine Teilschritte zerlegen. Sollen wir direkt mit dem ersten Schritt starten?`;
                 }
+
                 addMessage(reply, 'bot');
                 setThinking(false);
             }, 1000);
