@@ -41,19 +41,25 @@
     </header>
 
     <div class="chat-container" id="chatContainer">
-        <div class="message bot">Hallo Heiko! Ich bin dein lokaler Assistent (mit integrierten Ideen von helpfully.de für Vorlagen & Projekte). Wie kann ich dir heute helfen?</div>
+        <div class="message bot">Hallo Heiko! Ich lade gerade das lokale KI-Modell direkt in deinen Browser (Llama 3.2 1B via WebLLM). Das kann beim ersten Start einen Moment dauern...</div>
     </div>
 
     <div class="input-container">
-        <input type="text" id="userInput" placeholder="Nachricht eingeben..." autocomplete="off">
-        <button id="sendBtn" onclick="sendMessage()">➤</button>
+        <input type="text" id="userInput" placeholder="Lade lokales Modell..." disabled autocomplete="off">
+        <button id="sendBtn" onclick="sendMessage()" disabled>⌛</button>
     </div>
 
-    <script>
+    <script type="module">
+        import { CreateWebWorkerMLCEngine } from "https://esm.run/@mlc-ai/web-llm";
+
         const chatContainer = document.getElementById('chatContainer');
         const userInput = document.getElementById('userInput');
+        const sendBtn = document.getElementById('sendBtn');
         const statusText = document.getElementById('statusText');
         const avatarRing = document.getElementById('avatarRing');
+
+        let engine = null;
+        const selectedModel = "Llama-3.2-1B-Instruct-q4f16_1-MLC";
 
         function addMessage(text, sender) {
             const div = document.createElement('div');
@@ -61,49 +67,90 @@
             div.textContent = text;
             chatContainer.appendChild(div);
             chatContainer.scrollTop = chatContainer.scrollHeight;
+            return div;
         }
 
-        function setThinking(thinking) {
-            statusText.textContent = thinking ? "Denkt nach..." : "Bereit & Offline-fähig";
+        function setStatus(text, thinking = false) {
+            statusText.textContent = text;
             avatarRing.style.animationDuration = thinking ? "0.6s" : "2s";
         }
 
-        async function sendMessage() {
+        async function initLLM() {
+            try {
+                setStatus("Lade lokales Modell...");
+                engine = await CreateWebWorkerMLCEngine(
+                    new Worker(
+                        URL.createObjectURL(new Blob([`
+                            import { WebWorkerMLCEngineHandler } from "https://esm.run/@mlc-ai/web-llm";
+                            const handler = new WebWorkerMLCEngineHandler();
+                            onmessage = (msg) => handler.onmessage(msg);
+                        `], { type: "javascript" })),
+                        { type: "module" }
+                    ),
+                    selectedModel,
+                    {
+                        initProgressCallback: (report) => {
+                            statusText.textContent = report.text;
+                        }
+                    }
+                );
+                setStatus("Lokales KI-Modell bereit");
+                userInput.disabled = false;
+                userInput.placeholder = "Schreibe dem lokalen KI-Modell...";
+                sendBtn.disabled = false;
+                sendBtn.textContent = "➤";
+                addMessage("Das lokale KI-Modell ist geladen und läuft komplett privat in deinem Browser! Wie kann ich dir helfen?", "bot");
+            } catch (err) {
+                console.error(err);
+                setStatus("Fehler beim Laden (WebGPU benötigt)");
+                addMessage("Hinweis: Dein Browser/Gerät unterstützt möglicherweise kein WebGPU für lokale LLMs. Fallback auf Standard-Modus aktiv.", "bot");
+                userInput.disabled = false;
+                userInput.placeholder = "Nachricht eingeben...";
+                sendBtn.disabled = false;
+                sendBtn.textContent = "➤";
+            }
+        }
+
+        window.sendMessage = async function() {
             const text = userInput.value.trim();
             if (!text) return;
 
             addMessage(text, 'user');
             userInput.value = '';
-            setThinking(true);
+            setStatus("Generiert...", true);
 
-            setTimeout(() => {
-                let reply = "Das ist ein sehr interessanter Punkt! Lass uns das schrittweise angehen. Was genau möchtest du dazu wissen oder umsetzen?";
-                const lower = text.toLowerCase();
-                
-                if (lower.includes('hallo') || lower.includes('hi') || lower.includes('guten tag')) {
-                    reply = "Hallo Heiko! Schön, dass du da bist. Wie kann ich dir heute bei deinen Projekten oder Ideen helfen?";
-                } else if (lower.includes('bastel') || lower.includes('vorlagen') || lower.includes('helpfully')) {
-                    reply = "Ah, rund um Bastelvorlagen und kreative DIY-Projekte (wie von helpfully.de) habe ich jede Menge Ideen auf Lager! Suchst du nach einer bestimmten Vorlage oder einem Thema für Kinder?";
-                } else if (lower.includes('hilfe') || lower.includes('was kannst du')) {
-                    reply = "Ich bin dein persönlicher KI-Assistent direkt auf dem Smartphone! Du kannst mich zu allen möglichen Themen befragen, Ideen entwickeln, Texte schreiben oder kreative Projekte planen.";
-                } else if (lower.includes('witz') || lower.includes('erzähle')) {
-                    reply = "Warum können Programmierer die Natur nicht leiden? – Weil sie zu viele Bugs hat! 😄";
-                } else if (lower.length > 15) {
-                    reply = `Das klingt nach einem spannenden Projekt: "${text}". Um das optimal umzusetzen, könnten wir das in kleine Teilschritte zerlegen. Sollen wir direkt mit dem ersten Schritt starten?`;
+            if (engine) {
+                const botMsgDiv = addMessage("", 'bot');
+                try {
+                    const messages = [
+                        { role: "system", content: "Du bist Heikos hilfsreicher, direkter und freundlicher KI-Assistent auf Deutsch. Du kennst dich mit Projekten, Ideen und Kreativität (wie helpfully.de) aus." },
+                        { role: "user", content: text }
+                    ];
+                    const chunks = await engine.chat.completions.create({ messages, stream: true });
+                    let reply = "";
+                    for await (const chunk of chunks) {
+                        reply += chunk.choices[0]?.delta?.content || "";
+                        botMsgDiv.textContent = reply;
+                        chatContainer.scrollTop = chatContainer.scrollHeight;
+                    }
+                } catch (err) {
+                    botMsgDiv.textContent = "Fehler bei der lokalen Generierung: " + err.message;
                 }
-
-                addMessage(reply, 'bot');
-                setThinking(false);
-            }, 1000);
-        }
+                setStatus("Bereit");
+            } else {
+                // Fallback wenn WebGPU nicht verfügbar
+                setTimeout(() => {
+                    addMessage("Das ist eine spannende Frage zu: \"" + text + "\". (Im Fallback-Modus ohne WebGPU)", 'bot');
+                    setStatus("Bereit");
+                }, 1000);
+            }
+        };
 
         userInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') sendMessage();
         });
 
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js').catch(() => {});
-        }
+        initLLM();
     </script>
 </body>
 </html>
