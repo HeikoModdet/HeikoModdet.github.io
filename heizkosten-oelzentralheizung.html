@@ -2,190 +2,138 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <title>Heizkostenabrechnung – Summenrechner</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --ink: #10101a;
-      --blue: #2d7dff;
-      --paper: #fffdf5;
-      --green: #16a34a;
-      --red: #dc2626;
-    }
-    body {
-      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-      background: #f1f5f9;
-      color: var(--ink);
-      min-height: 100vh;
-      padding: 20px 12px 48px;
-    }
-    .container { max-width: 640px; margin: 0 auto; }
-    h1 { font-size: 1.4rem; margin-bottom: 6px; }
-    .subtitle { color: #64748b; font-size: 0.9rem; margin-bottom: 20px; line-height: 1.5; }
-
-    .card {
-      background: #fff; border-radius: 16px; padding: 18px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-      border: 1px solid #e2e8f0;
-    }
-
-    .sum-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
-    .sum-row .label { flex: 1 1 55%; }
-    .sum-row .amount { flex: 0 0 38%; display: flex; align-items: center; gap: 6px; }
-    .sum-row input {
-      width: 100%; padding: 12px; border: 1px solid #cbd5e1;
-      border-radius: 10px; background: #fff; font-size: 1rem;
-    }
-    .sum-row input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(45,125,255,0.15); }
-    .sum-row .lbl { font-weight: 600; color: #334155; font-size: 0.95rem; }
-    .sum-row .del {
-      border: none; background: transparent; color: var(--red); font-size: 1.3rem;
-      cursor: pointer; padding: 6px; line-height: 1;
-    }
-
-    .addbtn {
-      background: #e2e8f0; color: #334155; border: none; width: 100%;
-      padding: 12px; border-radius: 10px; font-size: 0.95rem; font-weight: 600;
-      cursor: pointer; margin-top: 4px;
-    }
-    .addbtn:hover { background: #cbd5e1; }
-
-    .total {
-      background: var(--ink); color: #fff; border-radius: 16px;
-      padding: 20px; text-align: center; margin-top: 16px;
-    }
-    .total .cap { font-size: 0.75rem; opacity: 0.75; text-transform: uppercase; letter-spacing: 0.08em; }
-    .total .sum { font-size: 2.4rem; font-weight: 800; margin-top: 6px; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
-
-    .actions { display: flex; gap: 10px; margin-top: 12px; }
-    .btn { flex: 1; border: none; padding: 13px; border-radius: 10px; font-size: 0.98rem; font-weight: 600; cursor: pointer; }
-    .btn.reset { background: #e2e8f0; color: #334155; }
-    .btn.reset:hover { background: #cbd5e1; }
-    .btn.calc { background: var(--blue); color: #fff; }
-    .btn.calc:hover { filter: brightness(1.08); }
-    .btn:active { transform: scale(0.98); }
-
-    .preset { margin: 0 0 14px; }
-    .preset p { font-size: 0.82rem; color: #64748b; margin-bottom: 8px; }
-    .pillrow { display: flex; flex-wrap: wrap; gap: 8px; }
-    .pill {
-      background: #f1f5f9; border: 1px solid #e2e8f0; color: #334155;
-      padding: 7px 12px; border-radius: 999px; font-size: 0.83rem; cursor: pointer;
-      transition: background 0.15s;
-    }
-    .pill:active { background: #e2e8f0; }
-
-    .note { margin-top: 16px; font-size: 0.78rem; color: #64748b; line-height: 1.55; }
-
-    @media (max-width: 380px) {
-      .total .sum { font-size: 2rem; }
-    }
-  </style>
+  <title>Heizkostenabrechnung</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#10101a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Playground">
+  <meta name="apple-mobile-web-app-title" content="Heizkosten">
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.svg">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <script>
-    if("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js").then(function(reg) {
-        console.log("SW registered: " + reg.scope);
-      }).catch(function(err) {
-        console.log("SW registration failed: " + err);
-      });
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --ink:#10101a; --paper:#fffdf5; --line:#d9dee5; --muted:#5b6472; --blue:#2d7dff; }
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      background: #eef1f5; color: var(--ink); min-height: 100vh; padding: 24px 14px 60px;
     }
-  </script>
+    .wrap { max-width: 620px; margin: 0 auto; }
+    h1 { font-size: 1.45rem; font-weight: 800; }
+    .sub { color: var(--muted); font-size: 0.9rem; margin: 6px 0 22px; line-height: 1.5; }
+
+    .card { background:#fff; border:1px solid var(--line); border-radius:16px; padding:18px; box-shadow:0 2px 10px rgba(0,0,0,.05); }
+    .field { margin-bottom: 16px; }
+    .field:last-child { margin-bottom: 0; }
+    label { display:block; font-weight:600; font-size:0.9rem; margin-bottom:6px; color:#2b3240; }
+    .hint { color:var(--muted); font-size:0.78rem; font-weight:400; }
+    input {
+      width:100%; padding:12px; border:1px solid #c7ced8; border-radius:10px;
+      font-size:1.05rem; background:#fff;
+    }
+    input:focus { outline:none; border-color:var(--blue); box-shadow:0 0 0 3px rgba(45,125,255,.15); }
+
+    .btn {
+      width:100%; border:none; background:var(--blue); color:#fff; padding:14px;
+      border-radius:12px; font-size:1rem; font-weight:700; cursor:pointer; margin-top:18px;
+    }
+    .btn:active { transform:scale(.98); }
+
+    .result { margin-top:18px; display:none; }
+    .result.show { display:block; }
+    .total { background:var(--ink); color:#fff; border-radius:14px; padding:18px; text-align:center; }
+    .total .lab { font-size:0.75rem; opacity:.75; text-transform:uppercase; letter-spacing:.06em; }
+    .total .val { font-size:2rem; font-weight:800; margin-top:4px; font-variant-numeric:tabular-nums; }
+    .break { margin-top:14px; background:#fff; border:1px solid var(--line); border-radius:14px; overflow:hidden; }
+    .row { display:flex; justify-content:space-between; padding:11px 16px; font-size:0.93rem; border-bottom:1px solid #eef1f5; }
+    .row:last-child { border-bottom:none; }
+    .row.note { color:var(--muted); font-size:0.8rem; }
+    .row .amt { font-weight:700; font-variant-numeric:tabular-nums; }
+    .row.warm .amt { color:#0e7490; }
+    .row.heiz .amt { color:#b45309; }
+
+    .calc {
+      margin-top:22px; font-size:0.78rem; color:var(--muted); background:#fff;
+      border:1px solid var(--line); border-radius:12px; padding:14px 16px; line-height:1.7;
+    }
+    .calc h2 { font-size:0.82rem; color:var(--ink); margin-bottom:4px; }
+    .calc code { background:#eef1f5; padding:1px 5px; border-radius:5px; font-size:0.82rem; }
+  </style>
 </head>
 <body>
-<div class="container">
-  <h1>🧾 Heizkostenabrechnung – Summenrechner</h1>
-  <p class="subtitle">Tragen Sie die einzelnen Beträge Ihrer Heizkostenabrechnung ein. Unten sehen Sie die Gesamtsumme, die Sie zahlen.</p>
+<div class="wrap">
+  <h1>Heizkostenabrechnung</h1>
+  <p class="sub">Öl-Zentralheizung · Berechnung nach Heizkostenverordnung §9</p>
 
   <div class="card">
-    <div class="preset">
-      <p>Häufige Positionen (anklicken, um sie hinzuzufügen):</p>
-      <div class="pillrow" id="pills">
-        <button class="pill" type="button" data-p="Heizung (Öl)">Heizung</button>
-        <button class="pill" type="button" data-p="Warmwasser">Warmwasser</button>
-        <button class="pill" type="button" data-p="Wartung">Wartung</button>
-        <button class="pill" type="button" data-p="Schornsteinfeger">Schornsteinfeger</button>
-        <button class="pill" type="button" data-p="Betriebsstrom">Betriebsstrom</button>
-        <button class="pill" type="button" data-p="Zählermiete">Zählermiete</button>
-        <button class="pill" type="button" data-p="Ablesekosten">Ablesekosten</button>
-      </div>
+    <div class="field">
+      <label>Literpreis des Heizöls <span class="hint">(€ pro Liter, z.B. aus der Rechnung)</span></label>
+      <input id="ip" type="number" inputmode="decimal" min="0" step="0.001" placeholder="z.B. 1,10">
     </div>
-    <div id="rows"></div>
-    <button class="addbtn" type="button" id="add">＋ Eigene Position hinzufügen</button>
+    <div class="field">
+      <label>Verbrauchtes Heizöl insgesamt <span class="hint">(Liter, z.B. aus Rechnung oder Tankuhr)</span></label>
+      <input id="oil" type="number" inputmode="decimal" min="0" step="1" placeholder="z.B. 1500">
+    </div>
+    <div class="field">
+      <label>Warmwasser-Zählerstand Anfang <span class="hint">(m³ am ersten Tag)</span></label>
+      <input id="w1" type="number" inputmode="decimal" min="0" step="0.001" placeholder="z.B. 120,500">
+    </div>
+    <div class="field">
+      <label>Warmwasser-Zählerstand Ende <span class="hint">(m³ am letzten Tag)</span></label>
+      <input id="w2" type="number" inputmode="decimal" min="0" step="0.001" placeholder="z.B. 150,000">
+    </div>
+    <button class="btn" id="go">Heizkosten berechnen</button>
   </div>
 
-  <div class="total">
-    <div class="cap">Gesamtsumme, die Sie zahlen</div>
-    <div class="sum" id="total">0,00 €</div>
+  <div class="result" id="res">
+    <div class="total">
+      <div class="lab">Gesamte Heizkosten</div>
+      <div class="val" id="tot">–</div>
+    </div>
+    <div class="break">
+      <div class="row heiz"><span>Heizung</span><span class="amt" id="hCost">–</span></div>
+      <div class="row warm"><span>Warmwasser</span><span class="amt" id="wCost">–</span></div>
+      <div class="row note"><span>davon Ölverbrauch Heizung</span><span id="hOil">–</span></div>
+      <div class="row note"><span>davon Ölverbrauch Warmwasser</span><span id="wOil">–</span></div>
+    </div>
   </div>
 
-  <div class="actions">
-    <button class="btn calc" type="button" id="calc">Summe berechnen</button>
-    <button class="btn reset" type="button" id="reset">Zurücksetzen</button>
+  <div class="calc">
+    <h2>So wird gerechnet</h2>
+    <div><b>1.</b> Warmwasserverbrauch: <code>V = Stand Ende − Stand Anfang</code> (m³)</div>
+    <div><b>2.</b> Energie für Warmwasser: <code>Q = 2,5 × V × 50</code> (kWh)<br><span style="color:var(--muted)">— bei einer Warmwassertemperatur von 60 °C und Kaltwasser 10 °C</span></div>
+    <div><b>3.</b> Dafür nötiges Öl: <code>B = Q ÷ 10</code> Liter <span style="color:var(--muted)">(Heizwert Heizöl = 10 kWh/L)</span></div>
+    <div><b>4.</b> Heizöl für die Heizung: <code>gesamt − B</code> Liter</div>
+    <div><b>5.</b> Kosten: <code>Liter × Literpreis</code> je Anteil</div>
   </div>
-
-  <p class="note">💡 <strong>Hinweis:</strong> Dieser Rechner ist für ein Haus mit <strong>einem Mieter</strong> gedacht – Sie zahlen die vollen Kosten. Bei mehreren Mietern müsste die Rechnung nach der Heizkostenverordnung aufgeteilt werden (nach Verbrauch und Wohnfläche).</p>
 </div>
 
 <script>
-  document.addEventListener('DOMContentLoaded', function () {
-    var rows = document.getElementById('rows');
-    var totalEl = document.getElementById('total');
-    var rowCount = 0;
+document.addEventListener('DOMContentLoaded', function () {
+  var go = document.getElementById('go');
+  function num(id) { return parseFloat(document.getElementById(id).value.replace(',', '.')) || 0; }
+  function fmt(n) { return n.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'; }
+  function fmtL(n) { return n.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' L'; }
 
-    function fmt(n) {
-      return n.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+  go.addEventListener('click', function () {
+    var preis = num('ip'), gesamt = num('oil'), v1 = num('w1'), v2 = num('w2');
+    if (preis <= 0 || gesamt <= 0 || v2 <= v1) {
+      alert('Bitte Literpreis, Ölverbrauch und einen gültigen Warmwasser-Zählerstand (Anfang < Ende) eingeben.');
+      return;
     }
+    var V = v2 - v1;                  // m³ Warmwasser
+    var Q = 2.5 * V * 50;             // kWh für Warmwasser (60°C − 10°C)
+    var B = Q / 10;                   // Liter Öl für Warmwasser (Heizwert 10)
+    B = Math.min(B, gesamt);
+    var BHeiz = gesamt - B;
 
-    function recalc() {
-      var sum = 0;
-      var inputs = rows.querySelectorAll('input.amount');
-      for (var i = 0; i < inputs.length; i++) {
-        sum += parseFloat(inputs[i].value) || 0;
-      }
-      totalEl.textContent = fmt(sum);
-    }
-
-    function addRow(label) {
-      rowCount++;
-      var id = 'r' + rowCount;
-      var div = document.createElement('div');
-      div.className = 'sum-row';
-      div.innerHTML =
-        '<div class="label"><input id="' + id + '-l" type="text" value="' + (label || 'Position ' + rowCount) + '" aria-label="Bezeichnung"></div>' +
-        '<div class="amount"><input class="amount" type="number" min="0" step="0.01" placeholder="0,00" aria-label="Betrag in Euro"><button class="del" type="button" aria-label="Position entfernen">✕</button></div>';
-      rows.appendChild(div);
-      div.querySelector('input.amount').addEventListener('input', recalc);
-      div.querySelector('.del').addEventListener('click', function () {
-        div.remove();
-        recalc();
-      });
-      recalc();
-    }
-
-    var pills = document.getElementById('pills');
-    pills.addEventListener('click', function (e) {
-      var b = e.target.closest('.pill');
-      if (b) { addRow(b.getAttribute('data-p')); }
-    });
-
-    document.getElementById('add').addEventListener('click', function () { addRow(); });
-    document.getElementById('calc').addEventListener('click', recalc);
-    document.getElementById('reset').addEventListener('click', function () {
-      rows.innerHTML = '';
-      rowCount = 0;
-      addRow('Heizung (Öl)');
-      recalc();
-    });
-
-    addRow('Heizung (Öl)');
+    document.getElementById('tot').textContent = fmt(gesamt * preis);
+    document.getElementById('hCost').textContent = fmt(BHeiz * preis);
+    document.getElementById('wCost').textContent = fmt(B * preis);
+    document.getElementById('hOil').textContent = fmtL(BHeiz);
+    document.getElementById('wOil').textContent = fmtL(Math.max(B, 0));
+    document.getElementById('res').classList.add('show');
   });
+});
 </script>
 </body>
 </html>
