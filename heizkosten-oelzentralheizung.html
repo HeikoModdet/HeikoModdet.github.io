@@ -2,129 +2,123 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Heizkosten Ölzentralheizung</title>
+  <title>Heizkostenabrechnung prüfen</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
       --ink: #10101a;
       --yellow: #ffd93d;
-      --red: #ff3b5c;
       --blue: #2d7dff;
-      --lime: #86ef1f;
-      --rap: #a855f7;
+      --green: #16a34a;
+      --red: #dc2626;
       --paper: #fffdf5;
     }
-
-    /* Halftone-Rasterpapier */
-    body::before {
-      content: "";
-      position: fixed;
-      inset: 0;
-      background-image: radial-gradient(var(--ink) 1.5px, transparent 1.6px);
-      background-size: 200px 200px;
-      opacity: 0.15;
-      pointer-events: none;
-      z-index: 0;
-    }
-
     body {
-    font-family: 'Comic Neue', 'Comic Sans MS', 'Trebuchet MS', sans-serif;
-    background: var(--yellow);
-    color: var(--ink);
-    min-height: 100vh;
-    padding: 16px 12px 40px;
-    position: relative;
-    overflow-x: hidden;
-  }
-    .container { max-width: 800px; margin: 0 auto; background: #fff; border-radius: 20px; box-shadow: 0 8px 30px rgba(0,0,0,0.08); padding: 24px 28px; }
-    h1 { font-size: 1.7rem; margin-bottom: 4px; color: #16213e; display: flex; align-items: center; gap: 8px; }
-    .subtitle { color: #6b7280; margin-bottom: 20px; font-size: 0.9rem; }
-    .header-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; background: #f9fafb; padding: 16px; border-radius: 12px; border: 1px solid #e5e7eb; }
-    .header-row .form-group { flex: 1 1 180px; }
-    .form-group label { display: block; font-weight: 600; margin-bottom: 4px; color: #374151; font-size: 0.85rem; }
-    .form-group input { width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; background: #fff; font-size: 0.95rem; transition: border 0.2s; }
-    .form-group input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
-
-    .section { border: 1px solid #e5e7eb; border-radius: 12px; margin-bottom: 12px; background: #fff; overflow: hidden; }
-    .section-header { display: flex; align-items: center; gap: 10px; padding: 14px 16px; background: #f9fafb; border-bottom: 1px solid #e5e7eb; }
-    .section-header .icon { font-size: 1.3rem; }
-    .section-header .title { font-weight: 700; font-size: 1rem; color: #16213e; flex: 1; }
-    .section-body { padding: 16px; }
-
-    table { width: 100%; border-collapse: collapse; }
-    th, td { padding: 8px 4px; text-align: left; border-bottom: 1px solid #f3f4f6; font-size: 0.9rem; }
-    th { color: #6b7280; font-weight: 500; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.03em; }
-    td.amount { text-align: right; }
-
-    .input-row { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 14px; align-items: flex-end; }
-    .input-row .form-group { flex: 1 1 160px; }
-    .input-row .form-group label { min-height: 2.4em; display: flex; align-items: flex-end; }
-    .input-row input[type=number] { width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; background: #fff; font-size: 0.95rem; }
-    .input-row input[type=number]:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
-
-
-    .section-total { background: #f9fafb; padding: 8px 12px; border-radius: 8px; margin-top: 8px; font-size: 0.9rem; color: #6b7280; display: flex; justify-content: space-between; align-items: center; }
-    .section-total strong { color: #16213e; font-size: 1rem; }
-
-    .actions { display: flex; gap: 10px; flex-wrap: wrap; margin: 20px 0; }
-    .btn { background: #16213e; color: #fff; border: none; padding: 12px 28px; border-radius: 10px; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: background 0.2s, transform 0.15s; flex: 1 1 auto; min-width: 140px; }
-    .btn:hover { background: #1e3a5f; }
-    .btn:active { transform: scale(0.97); }
-    .btn-secondary { background: #e5e7eb; color: #1f2937; }
-    .btn-secondary:hover { background: #d1d5db; }
-
-    .results { display: none; margin-top: 20px; }
-    .results.show { display: block; animation: fadeIn 0.3s ease; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-
-    .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 16px; }
-    .summary-card { background: #16213e; color: #fff; padding: 14px; border-radius: 12px; text-align: center; }
-    .summary-card .value { font-size: 1.3rem; font-weight: 700; font-variant-numeric: tabular-nums; }
-    .summary-card .label { font-size: 0.72rem; opacity: 0.75; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.05em; }
-    .summary-card.acc { background: #1e3a5f; }
-
-    .detail-section { margin-bottom: 12px; }
-    .detail-section h4 { font-size: 0.9rem; color: #6b7280; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.03em; }
-
-    .note { margin-top: 16px; font-size: 0.78rem; color: #6b7280; background: #fffbeb; border: 1px solid #fde68a; padding: 10px 14px; border-radius: 8px; line-height: 1.5; }
-
-    @media print {
-      body { background: #fff; padding: 0; }
-      .container { box-shadow: none; padding: 0; max-width: 100%; }
-      .btn, .actions { display: none; }
-      .section { break-inside: avoid; border: 1px solid #ddd; }
-      .results.show { display: block !important; }
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      background: #f1f5f9;
+      color: var(--ink);
+      min-height: 100vh;
+      padding: 20px 12px 48px;
     }
-    /* --- Back Arrow (top-left, all pages except index) --- */
-  .back-arrow {
-    position: fixed;
-    top: 14px;
-    left: 14px;
-    z-index: 100;
-    font-size: 1.6rem;
-    color: var(--ink);
-    background: var(--paper);
-    border: 3px solid var(--ink);
-    border-radius: 10px;
-    padding: 4px 10px;
-    text-decoration: none;
-    box-shadow: 3px 3px 0 var(--ink);
-    transition: all 0.15s;
-    cursor: pointer;
-    font-family: 'Bangers', 'Comic Sans MS', cursive;
-  }
-  .back-arrow:hover {
-    background: var(--ink);
-    color: var(--paper);
-    transform: scale(1.1);
-    box-shadow: 2px 2px 0 var(--ink);
-  }
+    .container { max-width: 720px; margin: 0 auto; }
 
-</style>
+    h1 { font-size: 1.45rem; margin-bottom: 4px; }
+    .subtitle { color: #64748b; font-size: 0.9rem; margin-bottom: 22px; line-height: 1.5; }
 
+    .card {
+      background: #fff; border-radius: 16px; padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      margin-bottom: 16px; border: 1px solid #e2e8f0;
+    }
+    .card h2 {
+      font-size: 1.05rem; margin-bottom: 14px; display: flex;
+      align-items: center; gap: 8px;
+    }
+    .badge {
+      background: var(--blue); color: #fff; font-size: 0.7rem;
+      padding: 3px 8px; border-radius: 999px; font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    .row { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
+    .field { flex: 1 1 180px; }
+    .field label {
+      display: block; font-weight: 600; margin-bottom: 4px;
+      color: #334155; font-size: 0.83rem; line-height: 1.25;
+    }
+    .field .unit { font-weight: 400; color: #94a3b8; }
+    .field input, .field select {
+      width: 100%; padding: 11px 12px; border: 1px solid #cbd5e1;
+      border-radius: 10px; background: #fff; font-size: 1rem;
+    }
+    .field input:focus, .field select:focus {
+      outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(45,125,255,0.15);
+    }
+
+    .divider { border-top: 1px dashed #cbd5e1; margin: 16px 0; }
+    .note {
+      font-size: 0.78rem; color: #64748b; background: #f8fafc;
+      border: 1px solid #e2e8f0; padding: 10px 12px; border-radius: 10px;
+      line-height: 1.55; margin-top: 12px;
+    }
+    .note strong { color: #334155; }
+
+    .btn {
+      background: var(--blue); color: #fff; border: none; width: 100%;
+      padding: 15px; border-radius: 12px; font-size: 1.05rem; font-weight: 700;
+      cursor: pointer; margin-top: 4px;
+    }
+    .btn:hover { filter: brightness(1.08); }
+    .btn:active { transform: scale(0.99); }
+    .btn.secondary { background: #e2e8f0; color: #334155; }
+
+    .results { display: none; margin-top: 18px; }
+    .results.show { display: block; animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; } }
+
+    .hero {
+      background: var(--ink); color: #fff; border-radius: 16px;
+      padding: 22px; text-align: center; margin-bottom: 16px;
+    }
+    .hero .anteil { font-size: 2.2rem; font-weight: 800; letter-spacing: -0.01em; }
+    .hero .cap { font-size: 0.72rem; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 4px; }
+
+    .compare {
+      display: flex; flex-wrap: wrap; gap: 12px; margin-top: 14px;
+    }
+    .compare .field { flex: 1 1 200px; }
+    .verdict {
+      border-radius: 12px; padding: 14px; margin-top: 12px;
+      font-weight: 600; font-size: 0.95rem;
+    }
+    .verdict.ok { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+    .verdict.warn { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+    .verdict.err { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+    .verdict .small { font-weight: 400; display: block; margin-top: 4px; font-size: 0.82rem; }
+
+    .breakdown { margin-top: 14px; }
+    .b-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 9px 0; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem;
+    }
+    .b-item .lbl { color: #334155; }
+    .b-item .sub {
+      display: block; font-size: 0.72rem; color: #94a3b8; font-weight: 400;
+    }
+    .b-item .val { font-weight: 700; font-variant-numeric: tabular-nums; }
+    .b-total {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 12px 0 0; font-weight: 800; font-size: 1.05rem;
+    }
+
+    .hint { color: #94a3b8; font-size: 0.8rem; margin-top: 20px; line-height: 1.6; }
+
+    @media (max-width: 480px) {
+      .field { flex-basis: 100%; }
+    }
+  </style>
   <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#04041a">
+  <meta name="theme-color" content="#10101a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Playground">
@@ -139,309 +133,228 @@
       });
     }
   </script>
-
 </head>
 <body>
-<a class="back-arrow" href="index.html" aria-label="Zurück zur Startseite">←</a>
-  <div class="container">
-    <h1>🛢️ Heizkosten Ölzentralheizung</h1>
-    <p class="subtitle">Berechnung des Heizölverbrauchs und der jährlichen Heizkosten.</p>
+<div class="container">
+  <h1>🧾 Heizkostenabrechnung prüfen</h1>
+  <p class="subtitle">Sie haben die Heizkostenabrechnung vom Vermieter bekommen? Tragen Sie hier die Werte ein – die Seite rechnet nach der gesetzlichen Heizkostenverordnung nach, ob Ihr Anteil stimmt.</p>
 
-    <div class="header-row">
-      <div class="form-group">
-        <label for="objekt">Objekt / Adresse</label>
-        <input type="text" id="objekt" placeholder="z.B. Musterstraße 42, 10115 Berlin">
-      </div>
-      <div class="form-group">
-        <label for="jahr">Berechnungsjahr</label>
-        <input type="number" id="jahr" value="2026" min="2020" max="2035">
-      </div>
-    </div>
+  <!-- HEIZUNG -->
+  <div class="card">
+    <h2>🔥 Heizung <span class="badge">nach §7 HeizkostenV</span></h2>
 
-    <!-- BRENNSTOFF -->
-    <div class="section">
-      <div class="section-header"><span class="icon">⛽</span><span class="title">Brennstoff – Heizöl</span></div>
-      <div class="section-body">
-        <div class="input-row">
-          <div class="form-group">
-            <label for="verbrauch">Verbrauch (Liter/Jahr)</label>
-            <input type="number" id="verbrauch" placeholder="z.B. 3500" min="0" step="10">
-          </div>
-          <div class="form-group">
-            <label for="preis">Ölpreis (€/Liter)</label>
-            <input type="number" id="preis" placeholder="z.B. 1,10" min="0" step="0.01">
-          </div>
-        </div>
-        <div class="section-total"><span>Kosten Heizöl</span><strong id="sum-oel">0,00 €</strong></div>
+    <div class="row">
+      <div class="field">
+        <label for="hz-eigV">Ihr Heizverbrauch (lt. Zähler)</label>
+        <input type="number" id="hz-eigV" min="0" step="any" placeholder="z.B. 850">
+      </div>
+      <div class="field">
+        <label for="hz-gesV">Heizverbrauch gesamt (Haus)</label>
+        <input type="number" id="hz-gesV" min="0" step="any" placeholder="z.B. 4200">
       </div>
     </div>
-
-    <!-- WARMWASSER -->
-    <div class="section">
-      <div class="section-header"><span class="icon">🚿</span><span class="title">Warmwasser-Berechnung (Warmwasserzähler)</span></div>
-      <div class="section-body">
-        <div class="input-row">
-          <div class="form-group">
-            <label for="ww-menge">Gesamt-Warmwassermenge (m³/Jahr)</label>
-            <input type="number" id="ww-menge" placeholder="z.B. 150" min="0" step="0.1">
-          </div>
-          <div class="form-group">
-            <label for="ww-temp">Warmwassertemperatur (°C)</label>
-            <input type="number" id="ww-temp" value="60" min="40" max="70" step="1">
-          </div>
-          <div class="form-group">
-            <label for="ww-hu">Heizwert Hu (kWh/l)</label>
-            <input type="number" id="ww-hu" value="10" min="1" step="0.1">
-          </div>
-        </div>
-        <div class="section-total">
-          <span>Heizöl für Warmwasser (B = 2,5 × V × (t−10) ÷ Hu)</span>
-          <strong id="sum-ww">0,00 €</strong>
-        </div>
-        <p class="subtitle" style="margin:14px 0 8px;">Mieter-Verbrauch über Warmwasseruhr (m³)</p>
-        <table>
-          <thead><tr><th>Mieter</th><th style="width:150px">Warmwasseruhr (m³)</th><th style="width:130px">Öl (L)</th><th style="width:130px">Kosten</th><th style="width:80px">Anteil</th></tr></thead>
-          <tbody id="ww-mieter-body"></tbody>
-        </table>
-        <button class="btn btn-secondary" id="ww-add" type="button" style="margin-top:12px; flex:none; min-width:auto; padding:8px 16px;">+ Mieter hinzufügen</button>
+    <div class="row">
+      <div class="field">
+        <label for="hz-eigF">Ihre Wohnfläche <span class="unit">(m²)</span></label>
+        <input type="number" id="hz-eigF" min="0" step="any" placeholder="z.B. 68">
+      </div>
+      <div class="field">
+        <label for="hz-gesF">Wohnfläche gesamt <span class="unit">(m²)</span></label>
+        <input type="number" id="hz-gesF" min="0" step="any" placeholder="z.B. 340">
       </div>
     </div>
-
-
-    <div class="actions">
-      <button class="btn" id="berechnen" type="button">🔥 Heizkosten berechnen</button>
-      <button class="btn btn-secondary" id="resetBtn" type="button">🔄 Reset</button>
-      <button class="btn btn-secondary" id="printBtn" type="button">🖨️ Drucken</button>
+    <div class="row">
+      <div class="field">
+        <label for="hz-gesK">Heizkosten gesamt (€, lt. Abrechnung)</label>
+        <input type="number" id="hz-gesK" min="0" step="0.01" placeholder="z.B. 1800">
+      </div>
+      <div class="field">
+        <label for="hz-satz">Verbrauchsanteil (§7 erlaubt 50–70&nbsp;%)</label>
+        <select id="hz-satz">
+          <option value="0.5">50&nbsp;%</option>
+          <option value="0.55">55&nbsp;%</option>
+          <option value="0.6">60&nbsp;%</option>
+          <option value="0.65">65&nbsp;%</option>
+          <option value="0.7" selected>70&nbsp;%</option>
+        </select>
+      </div>
     </div>
-
-    <div class="results" id="results">
-      <h3>📊 Ergebnisübersicht</h3>
-      <div class="summary-grid" id="summary"></div>
-      <div id="detailOutput"></div>
-    </div>
-
-    <div class="note">
-      <strong>Hinweis:</strong> Durchschnittlicher Heizölverbrauch ca. 10–15 Liter pro m² Wohnfläche und Jahr (Baujahr/Heizung abhängig). Alle Werte bitte aus Rechnungen und Verbrauchsdaten entnehmen.
-    </div>
+    <div class="note">So wird gerechnet: Von den Heizkosten werden <strong>70 %</strong> nach Ihrem Verbrauchsanteil (Ihr Zähler im Verhältnis zum Haus) verteilt, die übrigen <strong>30 %</strong> nach dem Flächenanteil. Der Vermieter darf den Verbrauchsanteil nur zwischen 50&nbsp;% und 70&nbsp;% wählen.</div>
   </div>
 
+  <!-- WARMWASSER -->
+  <div class="card">
+    <h2>🚿 Warmwasser <span class="badge">nach §8 HeizkostenV</span></h2>
+
+    <div class="row">
+      <div class="field">
+        <label for="ww-eigV">Ihr Warmwasserverbrauch <span class="unit">(m³)</span></label>
+        <input type="number" id="ww-eigV" min="0" step="any" placeholder="z.B. 22">
+      </div>
+      <div class="field">
+        <label for="ww-gesV">Warmwasser gesamt <span class="unit">(m³)</span></label>
+        <input type="number" id="ww-gesV" min="0" step="any" placeholder="z.B. 110">
+      </div>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label for="ww-gesK">Warmwasserkosten gesamt (€)</label>
+        <input type="number" id="ww-gesK" min="0" step="0.01" placeholder="z.B. 420">
+      </div>
+      <div class="field">
+        <label for="ww-satz">Verbrauchsanteil (§8 erlaubt 50–70&nbsp;%)</label>
+        <select id="ww-satz">
+          <option value="0.5">50&nbsp;%</option>
+          <option value="0.55">55&nbsp;%</option>
+          <option value="0.6">60&nbsp;%</option>
+          <option value="0.65">65&nbsp;%</option>
+          <option value="0.7" selected>70&nbsp;%</option>
+        </select>
+      </div>
+    </div>
+    <div class="note">Hat Ihre Wohnung <strong>keinen eigenen Warmwasserzähler</strong> oder ist Warmwasser in den Heizkosten enthalten, lassen Sie diese Felder leer. Die Seite rechnet dann nur die Heizung.</div>
+  </div>
+
+  <button class="btn" id="berechnen">✅ Anteil berechnen und prüfen</button>
+  <button class="btn secondary" id="resetBtn" style="margin-top:10px">🔄 Zurücksetzen</button>
+
+  <!-- ERGEBNIS -->
+  <div class="results" id="results">
+    <div class="hero">
+      <div class="cap">Ihr korrekter Heizkosten-Anteil</div>
+      <div class="anteil" id="r-anteil">–</div>
+    </div>
+
+    <div class="card">
+      <div class="compare">
+        <div class="field">
+          <label for="r-abrechnung">Was steht auf Ihrer Abrechnung? (€)</label>
+          <input type="number" id="r-abrechnung" min="0" step="0.01" placeholder="Ihr Betrag von der Abrechnung">
+        </div>
+      </div>
+      <div class="verdict" id="r-verdict"></div>
+
+      <div class="breakdown" id="r-breakdown"></div>
+    </div>
+
+    <p class="hint">💡 <strong>Hinweis:</strong> Diese Seite hilft Ihnen, Ihren Kostenanteil nach der Heizkostenverordnung nachzurechnen. Eine vollständige Heizkostenabrechnung enthält noch weitere Positionen (Wartung, Schornsteinfeger, Betriebsstrom u.&nbsp;ä.), die dem Verbrauch und der Fläche ebenfalls nach demselben Schlüssel zugerechnet werden. Bei Zweifeln an der Höhe Ihrer Rechnung sprechen Sie mit Ihrem Mieterverein oder einer Energieberatung.</p>
+  </div>
+</div>
+
 <script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const berechnenBtn = document.getElementById('berechnen');
-    const resetBtn = document.getElementById('resetBtn');
-    const printBtn = document.getElementById('printBtn');
-    const resultsDiv = document.getElementById('results');
-    const summaryDiv = document.getElementById('summary');
-    const detailDiv = document.getElementById('detailOutput');
-    const sumOel = document.getElementById('sum-oel');
-    const sumWw = document.getElementById('sum-ww');
-    const wwBody = document.getElementById('ww-mieter-body');
-    const wwAdd = document.getElementById('ww-add');
+  document.addEventListener('DOMContentLoaded', function () {
+    var calc = document.getElementById('berechnen');
+    var resetBtn = document.getElementById('resetBtn');
+    var results = document.getElementById('results');
 
-    function getObjektName() {
-      return document.getElementById('objekt').value.trim() || 'Unbenanntes Objekt';
-    }
-    function getYear() {
-      return document.getElementById('jahr').value || new Date().getFullYear();
-    }
-    function fmt(n) {
-      return n.toFixed(2).replace('.', ',') + ' €';
-    }
-    function fmtInt(n) {
-      return n.toLocaleString('de-DE') + ' L';
-    }
+    var fmt = function (n) {
+      return n.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+    };
 
-    // ---- Warmwasser-Mieter-Tabelle ----
-    function getWwParams() {
-      const menge = parseFloat(document.getElementById('ww-menge').value);
-      const temp = parseFloat(document.getElementById('ww-temp').value);
-      const hu = parseFloat(document.getElementById('ww-hu').value);
-      return { menge, temp: isNaN(temp) ? 60 : temp, hu: isNaN(hu) || hu <= 0 ? 10 : hu };
+    function num(id) {
+      var v = parseFloat(document.getElementById(id).value);
+      return (isNaN(v) || v < 0) ? 0 : v;
     }
-    // Öl-Liter für eine Warmwassermenge V (m³): B = 2,5 × V × (t−10) ÷ Hu
-    function wwOelLiter(V, temp, hu) {
-      return 2.5 * V * (temp - 10) / hu;
-    }
-
-    let wwMieterCount = 0;
-    function addWwMieter(name) {
-      wwMieterCount++;
-      const tr = document.createElement('tr');
-      const idx = wwMieterCount;
-      tr.innerHTML = `
-        <td><input type="text" class="label-input" value="${name || ('Mieter ' + idx)}" style="font-weight:600;"></td>
-        <td class="amount"><input type="number" class="ww-mieter" step="0.1" min="0" placeholder="0"></td>
-        <td class="amount ww-out" id="ww-oel-${idx}">–</td>
-        <td class="amount ww-out" id="ww-kosten-${idx}">–</td>
-        <td class="amount ww-out" id="ww-anteil-${idx}">–</td>
-      `;
-      wwBody.appendChild(tr);
-      tr.querySelector('input.ww-mieter').addEventListener('input', updateWwMieter);
-      updateWwMieter();
-    }
-
-    function updateWwMieter() {
-      const { temp, hu } = getWwParams();
-      const preis = parseFloat(document.getElementById('preis').value) || 0;
-      const rows = Array.from(wwBody.querySelectorAll('tr'));
-      let sumV = 0;
-      rows.forEach(tr => {
-        const v = parseFloat(tr.querySelector('.ww-mieter').value);
-        if (!isNaN(v) && v > 0) sumV += v;
-      });
-      let sumOel = 0, sumKosten = 0;
-      rows.forEach(tr => {
-        const v = parseFloat(tr.querySelector('.ww-mieter').value) || 0;
-        const liter = v > 0 ? wwOelLiter(v, temp, hu) : 0;
-        const kosten = liter * preis;
-        const idx = tr.querySelector('.ww-out').id.split('-')[2];
-        tr.querySelector('#ww-oel-' + idx).textContent = v > 0 ? (Math.round(liter).toLocaleString('de-DE') + ' L') : '–';
-        tr.querySelector('#ww-kosten-' + idx).textContent = v > 0 ? fmt(kosten) : '–';
-        tr.querySelector('#ww-anteil-' + idx).textContent = sumV > 0 && v > 0 ? ((v / sumV * 100).toFixed(1) + ' %') : '–';
-        sumOel += liter; sumKosten += kosten;
-      });
-    }
-
-    function updateSums() {
-      let oel = 0;
-      const verbrauch = parseFloat(document.getElementById('verbrauch').value);
-      const preis = parseFloat(document.getElementById('preis').value);
-      if (!isNaN(verbrauch) && verbrauch > 0 && !isNaN(preis) && preis > 0) {
-        oel = verbrauch * preis;
-      }
-      sumOel.textContent = fmt(oel);
-
-      // Warmwasser: Gesamt-B = Öl für die Gesamt-Warmwassermenge × Preis
-      const { menge, temp, hu } = getWwParams();
-      const wwOel = (menge && menge > 0) ? wwOelLiter(menge, temp, hu) : 0;
-      sumWw.textContent = fmt(wwOel * (preis || 0));
-
-      updateWwMieter();
-    }
-    document.addEventListener('input', updateSums);
 
     function calculate() {
-      const verbrauch = parseFloat(document.getElementById('verbrauch').value);
-      const preis = parseFloat(document.getElementById('preis').value);
-      const oelKosten = (!isNaN(verbrauch) && verbrauch > 0 && !isNaN(preis) && preis > 0) ? verbrauch * preis : 0;
+      // Heizung
+      var hzEigV = num('hz-eigV'), hzGesV = num('hz-gesV');
+      var hzEigF = num('hz-eigF'), hzGesF = num('hz-gesF');
+      var hzGesK = num('hz-gesK');
+      var hzSatz = parseFloat(document.getElementById('hz-satz').value);
 
-      // Warmwasser-Kosten
-      const { menge, temp, hu } = getWwParams();
-      const wwOel = (menge && menge > 0) ? wwOelLiter(menge, temp, hu) : 0;
-      const wwKosten = wwOel * (preis || 0);
+      // Warmwasser
+      var wwEigV = num('ww-eigV'), wwGesV = num('ww-gesV');
+      var wwGesK = num('ww-gesK');
+      var wwSatz = parseFloat(document.getElementById('ww-satz').value);
 
-      if (oelKosten <= 0 && wwKosten <= 0) {
-        alert('Bitte Verbrauch/Ölpreis und/oder Warmwassermenge ausfüllen.');
+      var anteil = 0;
+      var rows = [];
+
+      // Heizung: 50-70% nach Verbrauch, Rest nach Fläche
+      if (hzGesK > 0) {
+        var hzVerbrauch = hzGesK * hzSatz * (hzGesV > 0 ? (hzEigV / hzGesV) : 0);
+        var hzFlaeche = hzGesK * (1 - hzSatz) * (hzGesF > 0 ? (hzEigF / hzGesF) : 0);
+        var hzSum = hzVerbrauch + hzFlaeche;
+        anteil += hzSum;
+        rows.push({
+          name: 'Heizung',
+          verbrauch: hzVerbrauch,
+          flaeche: hzFlaeche,
+          summe: hzSum
+        });
+      }
+
+      // Warmwasser
+      if (wwGesK > 0) {
+        var wwVerbrauch = wwGesK * wwSatz * (wwGesV > 0 ? (wwEigV / wwGesV) : 0);
+        var wwFlaeche = wwGesK * (1 - wwSatz) * (hzGesF > 0 ? (hzEigF / hzGesF) : 0);
+        var wwSum = wwVerbrauch + wwFlaeche;
+        anteil += wwSum;
+        rows.push({
+          name: 'Warmwasser',
+          verbrauch: wwVerbrauch,
+          flaeche: wwFlaeche,
+          summe: wwSum
+        });
+      }
+
+      if (anteil <= 0) {
+        alert('Bitte mindestens Heizkosten gesamt und Ihre Wohnfläche ausfüllen. Falls Warmwasser einen eigenen Zähler hat, auch die Warmwasser-Werte.');
         return;
       }
 
-      const gesamt = oelKosten + wwKosten;
+      // Anzeige
+      document.getElementById('r-anteil').textContent = fmt(anteil);
 
-      summaryDiv.innerHTML = `
-        <div class="summary-card">
-          <div class="value">${fmt(oelKosten)}</div>
-          <div class="label">Heizöl / JAHR</div>
-        </div>
-        <div class="summary-card">
-          <div class="value">${fmt(wwKosten)}</div>
-          <div class="label">Warmwasser</div>
-        </div>
-        <div class="summary-card acc">
-          <div class="value">${fmt(gesamt)}</div>
-          <div class="label">GESAMT / JAHR</div>
-        </div>
-        <div class="summary-card acc">
-          <div class="value">${fmt(gesamt / 12)}</div>
-          <div class="label">Ø / MONAT</div>
-        </div>
-      `;
-
-      let detailHTML = '';
-      if (verbrauch > 0) {
-        detailHTML += `
-          <div class="detail-section"><h4>Brennstoff</h4>
-            <table>
-              <thead><tr><th>Position</th><th style="width:120px">Wert</th><th style="width:120px">Betrag</th></tr></thead>
-              <tbody>
-                <tr><td>Verbrauch</td><td class="amount">${fmtInt(verbrauch)}</td><td class="amount"></td></tr>
-                <tr><td>Ölpreis</td><td class="amount">${preis.toFixed(2).replace('.', ',')} €/L</td><td class="amount"></td></tr>
-                <tr><td>Kosten Heizöl</td><td class="amount"></td><td class="amount">${fmt(oelKosten)}</td></tr>
-              </tbody>
-            </table>
-          </div>`;
-      }
-
-      if (menge && menge > 0) {
-        // Mieter-Zeilen
-        let wwRows = '';
-        let mieterSumKosten = 0;
-        wwBody.querySelectorAll('tr').forEach(tr => {
-          const name = tr.querySelector('.label-input').value || 'Mieter';
-          const v = parseFloat(tr.querySelector('.ww-mieter').value) || 0;
-          if (v > 0) {
-            const liter = wwOelLiter(v, temp, hu);
-            const kosten = liter * (preis || 0);
-            const pct = menge > 0 ? (v / menge * 100).toFixed(1) : 0;
-            wwRows += `<tr><td>${name}</td><td class="amount">${v.toFixed(1).replace('.', ',')} m³</td><td class="amount">${Math.round(liter).toLocaleString('de-DE')} L</td><td class="amount">${fmt(kosten)}</td><td class="amount">${pct} %</td></tr>`;
-            mieterSumKosten += kosten;
-          }
-        });
-        detailHTML += `<div class="detail-section"><h4>Warmwasser-Berechnung (B = 2,5 × V × (t−10) ÷ Hu)</h4>
-          <table>
-            <thead><tr><th>Position</th><th style="width:120px">Wert</th><th style="width:120px">Betrag</th></tr></thead>
-            <tbody>
-              <tr><td>Warmwassermenge gesamt</td><td class="amount">${menge.toFixed(1).replace('.', ',')} m³</td><td class="amount"></td></tr>
-              <tr><td>Temperatur / Heizwert</td><td class="amount">${temp} °C / ${hu} kWh/l</td><td class="amount"></td></tr>
-              <tr><td>Heizöl für Warmwasser</td><td class="amount">${Math.round(wwOel).toLocaleString('de-DE')} L</td><td class="amount">${fmt(wwKosten)}</td></tr>
-            </tbody>
-          </table>`;
-        if (wwRows) {
-          detailHTML += `<p style="margin:10px 0 4px;font-size:0.85rem;color:#374151;">Mieter-Aufteilung (Warmwasseruhr):</p>
-          <table><thead><tr><th>Mieter</th><th style="width:100px">Verbrauch</th><th style="width:100px">Öl</th><th style="width:110px">Kosten</th><th style="width:80px">Anteil</th></tr></thead><tbody>${wwRows}</tbody></table>`;
+      // Vergleich
+      var verdictDiv = document.getElementById('r-verdict');
+      var abrechnung = num('r-abrechnung');
+      if (abrechnung > 0) {
+        var diff = abrechnung - anteil;
+        var rel = (Math.abs(diff) / anteil * 100);
+        var facts = 'Ihre Abrechnung: ' + fmt(abrechnung) + ' · Berechnet: ' + fmt(anteil);
+        if (rel <= 2) {
+          verdictDiv.className = 'verdict ok';
+          verdictDiv.innerHTML = '✅ <strong>Passt.</strong> Ihr Anteil stimmt.' + '<span class="small">' + facts + ' · Differenz: ' + fmt(Math.abs(diff)) + ' (' + rel.toFixed(1) + '&nbsp;%)</span>';
+        } else if (abrechnung > anteil) {
+          verdictDiv.className = 'verdict err';
+          verdictDiv.innerHTML = '⚠️ <strong>Sie zahlen ' + rel.toFixed(0) + '&nbsp;% mehr als nach dem Gesetz.</strong>' + '<span class="small">' + facts + ' · Differenz: ' + fmt(diff) + '</span><span class="small">Prüfen Sie die weitere Aufstellung – es können berechtigte Zusatzkosten (Wartung, Zähler) enthalten sein.</span>';
+        } else {
+          verdictDiv.className = 'verdict warn';
+          verdictDiv.innerHTML = 'ℹ️ <strong>' + rel.toFixed(0) + '&nbsp;% unter der Berechnung.</strong>' + '<span class="small">' + facts + ' · Differenz: ' + fmt(Math.abs(diff)) + '</span>';
         }
-        detailHTML += `</div>`;
+      } else {
+        verdictDiv.className = 'verdict';
+        verdictDiv.innerHTML = 'Tragen Sie oben Ihren Betrag von der Abrechnung ein, um ihn mit dem gesetzlich errechneten Anteil zu vergleichen.';
       }
 
-      detailHTML += `
-        <div class="detail-section" style="background:#16213e; color:#fff; padding:14px; border-radius:12px;">
-          <h4 style="color:#fff;">Gesamtsumme Heizkosten ${getYear()}</h4>
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
-            <span style="font-size:1.8rem; font-weight:700;">${fmt(gesamt)}</span>
-            <span style="opacity:0.7; font-size:0.85rem;">Objekt: ${getObjektName()}</span>
-          </div>
-          <div style="margin-top:8px; font-size:0.85rem; opacity:0.8; display:flex; gap:20px; flex-wrap:wrap;">
-            <span>Ø Monat: <strong>${fmt(gesamt/12)}</strong></span>
-            <span>Heizöl: <strong>${fmt(oelKosten)}</strong></span>
-            <span>Warmwasser: <strong>${fmt(wwKosten)}</strong></span>
-          </div>
-        </div>
-      `;
+      // Detailaufschlüsselung
+      var bd = document.getElementById('r-breakdown');
+      var html = '';
+      rows.forEach(function (r) {
+        var pctText = (r.verbrauch > 0) ? '' : '<span class="sub">Flächenanteil (kein Zähler)</span>';
+        html += '<div class="b-item"><span class="lbl">' + r.name + pctText + '</span><span class="val">' + fmt(r.summe) + '</span></div>';
+      });
+      html += '<div class="b-total"><span>Gesamt</span><span>' + fmt(anteil) + '</span></div>';
+      bd.innerHTML = '<div style="font-size:0.78rem;color:#94a3b8;margin-bottom:4px;">Aufschlüsselung Ihres Anteils</div>' + html;
 
-      detailDiv.innerHTML = detailHTML;
-      resultsDiv.classList.add('show');
+      results.classList.add('show');
+      results.scrollIntoView({ behavior: 'smooth' });
     }
 
     function resetAll() {
-      document.getElementById('objekt').value = '';
-      document.getElementById('jahr').value = new Date().getFullYear();
-      document.getElementById('verbrauch').value = '';
-      document.getElementById('preis').value = '';
-      document.getElementById('ww-menge').value = '';
-      document.getElementById('ww-temp').value = 60;
-      document.getElementById('ww-hu').value = 10;
-      wwBody.innerHTML = '';
-      wwMieterCount = 0;
-      addWwMieter('Mieter 1');
-      resultsDiv.classList.remove('show');
-      updateSums();
+      ['hz-eigV','hz-gesV','hz-eigF','hz-gesF','hz-gesK','ww-eigV','ww-gesV','ww-gesK','r-abrechnung'].forEach(function (id) {
+        document.getElementById(id).value = '';
+      });
+      document.getElementById('hz-satz').value = '0.7';
+      document.getElementById('ww-satz').value = '0.7';
+      results.classList.remove('show');
+      results.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
-    // Start mit einem Mieter
-    addWwMieter('Mieter 1');
-    wwAdd.addEventListener('click', () => addWwMieter());
-    berechnenBtn.addEventListener('click', calculate);
+    calc.addEventListener('click', calculate);
     resetBtn.addEventListener('click', resetAll);
-    printBtn.addEventListener('click', () => window.print());
   });
 </script>
 </body>
