@@ -154,10 +154,17 @@
                         [{ role: "user", content: text }],
                         { max_new_tokens: 200, do_sample: true, top_k: 40, temperature: 0.7, return_full_text: false }
                     );
-                    let reply = result?.[0]?.generated_text || "Keine Antwort.";
-                    // Chat-Template-Marker, falls das Modell welche stuetzt, minimal reinigen
-                    reply = reply.replace(/<\|im_\|>/g, '').replace(/<s|<\/s><\|/g, '');
-                    reply = reply.trim();
+                    let reply = "";
+                    if (Array.isArray(result?.[0]?.generated_text)) {
+                        // transformers.js v3: generated_text ist ein Array von Chat-Messages
+                        const last = result[0].generated_text[result[0].generated_text.length - 1];
+                        reply = (last && last.content) || "";
+                    } else {
+                        reply = result?.[0]?.generated_text || "";
+                    }
+                    if (!reply) reply = "Keine Antwort.";
+                    // Chat-Marker/Template-Reste minimal reinigen
+                    reply = String(reply).replace(/<\|im_\|>/g, '').replace(/<s|<\/s><\|/g, '').trim();
                     botMsgDiv.textContent = reply;
                     chatContainer.scrollTop = chatContainer.scrollHeight;
                 } catch (err) {
