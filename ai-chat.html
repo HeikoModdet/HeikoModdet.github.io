@@ -123,6 +123,7 @@
                 // WebGPU nutzen falls verfuegbar, sonst CPU/WASM (laeuft IMMER)
                 const device = ('gpu' in navigator && navigator.gpu) ? 'webgpu' : 'wasm';
                 generator = await pipeline('text-generation', MODEL_ID, { device: device, dtype: 'q4' });
+                window.generator = generator; // Fuer Browser-Debugging
                 progressContainer.style.display = 'none';
                 setStatus(device === 'webgpu' ? "KI-Modell bereit (GPU)" : "KI-Modell bereit (CPU)");
                 userInput.disabled = false;
