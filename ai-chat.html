@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Heiko AI Assistant - PWA</title>
+    <title>AI Assistant - PWA</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0f172a">
     <style>
@@ -34,14 +34,14 @@
                 <div class="avatar-face">🤖</div>
             </div>
             <div class="status-info">
-                <h1>Heiko AI Assistant</h1>
+                <h1>AI Assistant</h1>
                 <p id="statusText">Bereit & Offline-fähig</p>
             </div>
         </div>
     </header>
 
     <div class="chat-container" id="chatContainer">
-        <div class="message bot" id="welcomeMsg">Hallo Heiko! Ich lade das lokale KI-Modell (Llama 3.2 1B) direkt in deinen Browser. Bitte warte kurz...</div>
+        <div class="message bot" id="welcomeMsg">Hallo! Ich lade ein kompaktes KI-Modell direkt in deinen Browser. Bitte warte kurz...</div>
     </div>
 
     <!-- Fortschrittbalken -->
@@ -75,8 +75,9 @@
         const welcomeMsg = document.getElementById('welcomeMsg');
 
         let engine = null;
-        // Das absolut kleinste und schnellste LLM für Browser (SmolLM2-135M ist extrem winzig und lädt sekundenschnell)
-        const selectedModel = "SmolLM2-135M-Instruct-q4f16_1-MLC";
+        // Das kleinste und schnellste LLM für Browser (SmolLM2-135M ist extrem winzig und lädt sekundenschnell)
+        // Hinweis: Die q4f16-variante existiert in web-llm 0.2.x nicht mehr -> q0f16 (min.) verwenden
+        const selectedModel = "SmolLM2-135M-Instruct-q0f16-MLC";
 
         function addMessage(text, sender) {
             const div = document.createElement('div');
@@ -128,12 +129,12 @@
                 userInput.placeholder = "Schreibe mit SmolLM2...";
                 sendBtn.disabled = false;
                 sendBtn.textContent = "➤";
-                welcomeMsg.textContent = "Das winzige lokale LLM (SmolLM2-135M) ist geladen! Du kannst direkt losschreiben.";
+                welcomeMsg.textContent = "Das kompakte lokale KI-Modell ist geladen! Du kannst direkt losschreiben.";
             } catch (err) {
                 console.error(err);
                 progressContainer.style.display = 'none';
                 setStatus("WebGPU nicht verfügbar");
-                welcomeMsg.textContent = "Dein Browser unterstützt kein WebGPU für lokale LLMs. Bitte nutze einen modernen Browser.";
+                welcomeMsg.textContent = "Dein Browser unterstützt leider kein WebGPU — das ist für diese lokale KI-Variante nötig. Auf einem modernen Chrome/Edge funktioniert es.";
                 userInput.disabled = false;
                 userInput.placeholder = "Nachricht eingeben...";
                 sendBtn.disabled = false;
