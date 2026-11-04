@@ -1,4 +1,4 @@
-const CACHE_NAME = 'playground-v8';
+const CACHE_NAME = 'playground-v9';
 const ASSETS = [
   '/',
   '/index.html',
@@ -36,14 +36,34 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
+  const { request } = e;
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return; // cross-origin unangetastet
+
+  // NAVIGATION (HTML-Seiten) = NETWORK-FIRST: immer neueste Version,
+  // Cache nur als Offline-Fallback. Verhindert alte Seiten im Cache.
+  if (request.mode === 'navigate') {
+    e.respondWith(
+      fetch(request).then(resp => {
+        const clone = resp.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
+        return resp;
+      }).catch(() =>
+        caches.match(request).then(cached => cached || caches.match('/index.html'))
+      )
+    );
+    return;
+  }
+
+  // STATIC ASSETS (Bilder, Icons, Manifest) = CACHE-FIRST fuer Geschwindigkeit
   e.respondWith(
-    caches.match(e.request).then(cached => {
-      const fetched = fetch(e.request).then(response => {
-        if (response && response.status === 200) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
+    caches.match(request).then(cached => {
+      const fetched = fetch(request).then(resp => {
+        if (resp && resp.status === 200) {
+          const clone = resp.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
         }
-        return response;
+        return resp;
       }).catch(() => cached);
       return cached || fetched;
     })
