@@ -94,6 +94,16 @@
         }
 
         async function initLLM() {
+            // Timeout-Waechter: wenn WebGPU nach 90s nicht bereit, klare Meldung statt ewigem Hangen
+            const watchdog = setTimeout(() => {
+                setStatus("WebGPU haengt oder nicht verfuegbar");
+                welcomeMsg.textContent = "Die Initialisierung von WebGPU dauert zu lange. Das lokale KI-Modell laeuft aktuell nur in einem Chrome- oder Edge-Browser mit kompatibler GPU. Nutz bitte Chrome/Edge auf einem Desktop oder aktuelle Android-Chrome.";
+                progressContainer.style.display = 'none';
+                userInput.disabled = false;
+                userInput.placeholder = "Nachricht eingeben...";
+                sendBtn.disabled = false;
+                sendBtn.textContent = "➤";
+            }, 90000);
             try {
                 setStatus("Lade winziges lokales LLM...");
                 engine = await CreateWebWorkerMLCEngine(
@@ -124,6 +134,7 @@
                 );
                 
                 progressContainer.style.display = 'none';
+                clearTimeout(watchdog);
                 setStatus("Lokales LLM bereit");
                 userInput.disabled = false;
                 userInput.placeholder = "Schreibe mit SmolLM2...";
