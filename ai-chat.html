@@ -16,7 +16,7 @@
         .status-info h1 { font-size: 16px; font-weight: 600; }
         .status-info p { font-size: 12px; color: #94a3b8; }
         .chat-container { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; -webkit-overflow-scrolling: touch; }
-        .message { max-width: 85%; padding: 12px 16px; border-radius: 16px; font-size: 14px; line-height: 1.4; word-break: break-word; }
+        .message { max-width: 85%; padding: 12px 16px; border-radius: 16px; font-size: 14px; line-height: 1.4; word-break: break-word; white-space: pre-wrap; }
         .message.user { background: #3b82f6; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
         .message.bot { background: #1e293b; color: #f8fafc; align-self: flex-start; border-bottom-left-radius: 4px; border: 1px solid #334155; }
         .input-container { padding: 12px 16px; background: #1e293b; border-top: 1px solid #334155; display: flex; gap: 8px; flex-shrink: 0; padding-bottom: max(12px, env(safe-area-inset-bottom)); }
@@ -24,6 +24,7 @@
         input:focus { border-color: #3b82f6; }
         button { background: #3b82f6; border: none; border-radius: 50%; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: white; cursor: pointer; flex-shrink: 0; }
         button:active { transform: scale(0.95); }
+        button:disabled { background: #475569; cursor: not-allowed; }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); } 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); } }
     </style>
 </head>
@@ -35,19 +36,19 @@
             </div>
             <div class="status-info">
                 <h1>AI Assistant</h1>
-                <p id="statusText">Bereit & Offline-fähig</p>
+                <p id="statusText">Bereit</p>
             </div>
         </div>
     </header>
 
     <div class="chat-container" id="chatContainer">
-        <div class="message bot" id="welcomeMsg">Hallo! Ich lade ein kompaktes KI-Modell direkt in deinen Browser. Bitte warte kurz...</div>
+        <div class="message bot" id="welcomeMsg">Hallo! Ich lade ein kompaktes KI-Modell direkt in deinen Browser. Der erste Start dauert einen Moment (das Modell wird aus dem Netz geholt) — danach arbeite ich auch offline.</div>
     </div>
 
     <!-- Fortschrittbalken -->
     <div id="progressContainer" style="padding: 10px 16px; background: #1e293b; border-top: 1px solid #334155; display: flex; flex-direction: column; gap: 6px; flex-shrink: 0;">
         <div style="display: flex; justify-content: space-between; font-size: 12px; color: #94a3b8;">
-            <span id="progressText">Initialisiere WebGPU...</span>
+            <span id="progressText">Initialisiere...</span>
             <span id="progressPercent">0%</span>
         </div>
         <div style="width: 100%; height: 6px; background: #0f172a; border-radius: 3px; overflow: hidden;">
@@ -56,12 +57,14 @@
     </div>
 
     <div class="input-container">
-        <input type="text" id="userInput" placeholder="Lade lokales Modell..." disabled autocomplete="off">
+        <input type="text" id="userInput" placeholder="Modell wird geladen..." disabled autocomplete="off">
         <button id="sendBtn" onclick="sendMessage()" disabled>⌛</button>
     </div>
 
     <script type="module">
-        import { CreateWebWorkerMLCEngine } from "https://esm.run/@mlc-ai/web-llm";
+        // transformers.js: laeuft ohne WebGPU (WebAssembly-CPU-Rueckfall), nutzt GPU nur wenn vorhanden.
+        // Damit funktioniert es robust in Chrome/Edge, auch wenn WebGPU nicht hart beschleunigt.
+        import { pipeline, env } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.1.2";
 
         const chatContainer = document.getElementById('chatContainer');
         const userInput = document.getElementById('userInput');
@@ -74,10 +77,10 @@
         const progressPercent = document.getElementById('progressPercent');
         const welcomeMsg = document.getElementById('welcomeMsg');
 
-        let engine = null;
-        // Das kleinste und schnellste LLM für Browser (SmolLM2-135M ist extrem winzig und lädt sekundenschnell)
-        // Hinweis: Die q4f16-variante existiert in web-llm 0.2.x nicht mehr -> q0f16 (min.) verwenden
-        const selectedModel = "SmolLM2-135M-Instruct-q0f16-MLC";
+        let generator = null;
+
+        // Kompaktes, im Browser bewaehrtes ONNX-Chain-Modell (SmolLM2-135M, q4-Quantisierung)
+        const MODEL_ID = "onnx-community/SmolLM2-135M-Instruct-ONNX";
 
         function addMessage(text, sender) {
             const div = document.createElement('div');
@@ -93,63 +96,43 @@
             avatarRing.style.animationDuration = thinking ? "0.6s" : "2s";
         }
 
+        function setProgress(pct, label) {
+            progressBar.style.width = pct + '%';
+            progressPercent.textContent = Math.round(pct) + '%';
+            progressText.textContent = label;
+        }
+
         async function initLLM() {
-            // Timeout-Waechter: wenn WebGPU nach 90s nicht bereit, klare Meldung statt ewigem Hangen
-            const watchdog = setTimeout(() => {
-                setStatus("WebGPU haengt oder nicht verfuegbar");
-                welcomeMsg.textContent = "Die Initialisierung von WebGPU dauert zu lange. Das lokale KI-Modell laeuft aktuell nur in einem Chrome- oder Edge-Browser mit kompatibler GPU. Nutz bitte Chrome/Edge auf einem Desktop oder aktuelle Android-Chrome.";
-                progressContainer.style.display = 'none';
-                userInput.disabled = false;
-                userInput.placeholder = "Nachricht eingeben...";
-                sendBtn.disabled = false;
-                sendBtn.textContent = "➤";
-            }, 90000);
             try {
-                setStatus("Lade winziges lokales LLM...");
-                engine = await CreateWebWorkerMLCEngine(
-                    new Worker(
-                        URL.createObjectURL(new Blob([`
-                            import { WebWorkerMLCEngineHandler } from "https://esm.run/@mlc-ai/web-llm";
-                            const handler = new WebWorkerMLCEngineHandler();
-                            onmessage = (msg) => handler.onmessage(msg);
-                        `], { type: "javascript" })),
-                        { type: "module" }
-                    ),
-                    selectedModel,
-                    {
-                        initProgressCallback: (report) => {
-                            progressText.textContent = report.text;
-                            const match = report.text.match(/(\d+)%/);
-                            if (match) {
-                                const pct = match[1];
-                                progressBar.style.width = pct + '%';
-                                progressPercent.textContent = pct + '%';
-                            } else {
-                                progressBar.style.width = '60%';
-                                progressPercent.textContent = '...';
-                            }
-                            statusText.textContent = report.text;
-                        }
+                setStatus("Lade kompaktes KI-Modell...");
+                // Modelle werden im Browser-Cache wiederverwendet
+                env.allowLocalModels = false;  // immer vom Hub laden
+                env.useBrowserCache = true;    // bereits geladene Teile wiederverwenden
+
+                env.onProgress = (item) => {
+                    if (item.status === 'progress' && item.total > 0) {
+                        const pct = Math.round(100 * item.loaded / item.total);
+                        setProgress(pct, item.file || 'Modell wird geladen...');
+                    } else if (item.status === 'done' || item.status === 'ready') {
+                        setProgress(100, 'Modell bereit');
                     }
-                );
-                
+                };
+
+                // WebGPU nutzen falls verfuegbar, sonst CPU/WASM (laeuft IMMER)
+                const device = ('gpu' in navigator && navigator.gpu) ? 'webgpu' : 'wasm';
+                generator = await pipeline('text-generation', MODEL_ID, { device: device, dtype: 'q4' });
                 progressContainer.style.display = 'none';
-                clearTimeout(watchdog);
-                setStatus("Lokales LLM bereit");
+                setStatus(device === 'webgpu' ? "KI-Modell bereit (GPU)" : "KI-Modell bereit (CPU)");
                 userInput.disabled = false;
-                userInput.placeholder = "Schreibe mit SmolLM2...";
+                userInput.placeholder = "Schreibe eine Nachricht...";
                 sendBtn.disabled = false;
                 sendBtn.textContent = "➤";
-                welcomeMsg.textContent = "Das kompakte lokale KI-Modell ist geladen! Du kannst direkt losschreiben.";
+                welcomeMsg.textContent = "Das kompakte KI-Modell ist geladen! Du kannst direkt losschreiben.";
             } catch (err) {
                 console.error(err);
                 progressContainer.style.display = 'none';
-                setStatus("WebGPU nicht verfügbar");
-                welcomeMsg.textContent = "Dein Browser unterstützt leider kein WebGPU — das ist für diese lokale KI-Variante nötig. Auf einem modernen Chrome/Edge funktioniert es.";
-                userInput.disabled = false;
-                userInput.placeholder = "Nachricht eingeben...";
-                sendBtn.disabled = false;
-                sendBtn.textContent = "➤";
+                setStatus("Modell konnte nicht geladen werden");
+                welcomeMsg.textContent = "Das KI-Modell konnte nicht geladen werden (Details in der Browser-Konsole, F12). Bitte Seite neu laden oder Netzwerk pruefen.";
             }
         }
 
@@ -161,26 +144,26 @@
             userInput.value = '';
             setStatus("Generiert...", true);
 
-            if (engine) {
+            if (generator) {
                 const botMsgDiv = addMessage("", 'bot');
                 try {
-                    const messages = [
-                        { role: "system", content: "You are a helpful AI assistant." },
-                        { role: "user", content: text }
-                    ];
-                    const chunks = await engine.chat.completions.create({ messages, stream: true });
-                    let reply = "";
-                    for await (const chunk of chunks) {
-                        reply += chunk.choices[0]?.delta?.content || "";
-                        botMsgDiv.textContent = reply;
-                        chatContainer.scrollTop = chatContainer.scrollHeight;
-                    }
+                    const result = await generator(
+                        text,
+                        { max_new_tokens: 200, do_sample: false, top_k: 40, return_full_text: false }
+                    );
+                    let reply = result?.[0]?.generated_text || "Keine Antwort.";
+                    // Chat-Template-Marker, falls das Modell welche stuetzt, minimal reinigen
+                    reply = reply.replace(/<\|im_\|>/g, '').replace(/<s|<\/s><\|/g, '');
+                    reply = reply.trim();
+                    botMsgDiv.textContent = reply;
+                    chatContainer.scrollTop = chatContainer.scrollHeight;
                 } catch (err) {
-                    botMsgDiv.textContent = "Fehler: " + err.message;
+                    console.error(err);
+                    botMsgDiv.textContent = "Fehler beim Generieren: " + err.message;
                 }
                 setStatus("Bereit");
             } else {
-                addMessage("Kein lokales Modell geladen.", 'bot');
+                addMessage("Das Modell ist noch nicht bereit.", 'bot');
                 setStatus("Bereit");
             }
         };
