@@ -64,6 +64,25 @@
     .row .pos { color:var(--red); font-weight:800; }
     .row .neg { color:var(--green); font-weight:800; }
 
+    /* Drucken / Als PDF speichern */
+    .btnPrint {
+      width:100%; border:2px solid var(--ink); background:#fff; color:var(--ink);
+      padding:14px; border-radius:12px; font-size:1.02rem; font-weight:700; cursor:pointer;
+      margin-top:14px; display:flex; align-items:center; justify-content:center; gap:8px;
+    }
+    .btnPrint:active { transform:scale(.98); }
+
+    /* Nur die fertige Abrechnung drucken, Rest (Eingaben, Buttons) ausblenden */
+    @media print {
+      body { background:#fff; padding:0; }
+      h1, .sub, .card, .btn, .calc, .law, .btnPrint, .printinfo { display:none !important; }
+      .wrap { max-width:none; }
+      .result { display:block !important; margin-top:0; }
+      .total { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+      .break { border-color:#000; }
+      .row { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    }
+
     .calc {
       margin-top:18px; font-size:0.78rem; color:var(--muted); background:#fff;
       border:1px solid var(--line); border-radius:12px; padding:14px 16px; line-height:1.7;
@@ -169,6 +188,7 @@
       <div class="row head"><span>Gesamtkosten Wohnung</span><span class="amt" id="lineGesamt">–</span></div>
       <div class="row">Vorauszahlungen <span class="amt" id="lineVor">–</span></div>
     </div>
+    <button class="btnPrint" id="printBtn">🖨️ Drucken / Als PDF speichern</button>
   </div>
 
   <div class="calc">
@@ -242,6 +262,11 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   document.getElementById('lp').addEventListener('input', updatePreis);
+
+  var printBtn = document.getElementById('printBtn');
+  printBtn.addEventListener('click', function () {
+    window.print();
+  });
 });
 </script>
 </body>
