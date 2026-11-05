@@ -12,7 +12,7 @@
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.svg">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    :root { --ink:#10101a; --paper:#fffdf5; --line:#d9dee5; --muted:#5b6472; --blue:#2d7dff; }
+    :root { --ink:#10101a; --paper:#fffdf5; --line:#d9dee5; --muted:#5b6472; --blue:#2d7dff; --green:#16a34a; --red:#dc2626; }
     body {
       font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
       background: #eef1f5; color: var(--ink); min-height: 100vh; padding: 24px 14px 60px;
@@ -21,8 +21,11 @@
     h1 { font-size: 1.45rem; font-weight: 800; }
     .sub { color: var(--muted); font-size: 0.9rem; margin: 6px 0 22px; line-height: 1.5; }
 
-    .card { background:#fff; border:1px solid var(--line); border-radius:16px; padding:18px; box-shadow:0 2px 10px rgba(0,0,0,.05); }
-    .field { margin-bottom: 16px; }
+    .card { background:#fff; border:1px solid var(--line); border-radius:16px; padding:18px; box-shadow:0 2px 10px rgba(0,0,0,.05); margin-top:16px; }
+    .card h2 { font-size:1rem; font-weight:800; margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+    .card h2 .n { background:var(--ink); color:#fff; border-radius:50%; width:24px; height:24px; display:inline-flex; align-items:center; justify-content:center; font-size:0.8rem; flex:0 0 auto; }
+
+    .field { margin-bottom: 14px; }
     .field:last-child { margin-bottom: 0; }
     label { display:block; font-weight:600; font-size:0.9rem; margin-bottom:6px; color:#2b3240; }
     .hint { color:var(--muted); font-size:0.78rem; font-weight:400; }
@@ -32,106 +35,238 @@
     }
     input:focus { outline:none; border-color:var(--blue); box-shadow:0 0 0 3px rgba(45,125,255,.15); }
 
+    /* Zwei Eingaben nebeneinander (z.B. Abschlag × Monate) */
+    .pair { display:flex; gap:10px; }
+    .pair .field { flex:1; }
+
     .btn {
-      width:100%; border:none; background:var(--blue); color:#fff; padding:14px;
-      border-radius:12px; font-size:1rem; font-weight:700; cursor:pointer; margin-top:18px;
+      width:100%; border:none; background:var(--blue); color:#fff; padding:15px;
+      border-radius:12px; font-size:1.05rem; font-weight:700; cursor:pointer; margin-top:6px;
     }
     .btn:active { transform:scale(.98); }
 
     .result { margin-top:18px; display:none; }
     .result.show { display:block; }
-    .total { background:var(--ink); color:#fff; border-radius:14px; padding:18px; text-align:center; }
-    .total .lab { font-size:0.75rem; opacity:.75; text-transform:uppercase; letter-spacing:.06em; }
+
+    .total { border-radius:14px; padding:18px; text-align:center; color:#fff; }
+    .total.pay { background:var(--ink); }
+    .total.back { background:var(--green); }
+    .total .lab { font-size:0.8rem; opacity:.85; text-transform:uppercase; letter-spacing:.06em; }
     .total .val { font-size:2rem; font-weight:800; margin-top:4px; font-variant-numeric:tabular-nums; }
+    .total .subv { font-size:0.85rem; opacity:.85; margin-top:6px; }
+
     .break { margin-top:14px; background:#fff; border:1px solid var(--line); border-radius:14px; overflow:hidden; }
     .row { display:flex; justify-content:space-between; padding:11px 16px; font-size:0.93rem; border-bottom:1px solid #eef1f5; }
     .row:last-child { border-bottom:none; }
-    .row.note { color:var(--muted); font-size:0.8rem; }
+    .row.soft { color:var(--muted); font-size:0.85rem; }
+    .row.head { background:#f6f8fb; font-weight:700; color:#2b3240; }
     .row .amt { font-weight:700; font-variant-numeric:tabular-nums; }
-    .row.warm .amt { color:#0e7490; }
-    .row.heiz .amt { color:#b45309; }
+    .row .pos { color:var(--red); font-weight:800; }
+    .row .neg { color:var(--green); font-weight:800; }
 
     .calc {
-      margin-top:22px; font-size:0.78rem; color:var(--muted); background:#fff;
+      margin-top:18px; font-size:0.78rem; color:var(--muted); background:#fff;
       border:1px solid var(--line); border-radius:12px; padding:14px 16px; line-height:1.7;
     }
-    .calc h2 { font-size:0.82rem; color:var(--ink); margin-bottom:4px; }
-    .calc code { background:#eef1f5; padding:1px 5px; border-radius:5px; font-size:0.82rem; }
+    .calc h2 { font-size:0.82rem; color:var(--ink); margin-bottom:6px; }
+    .calc code { background:#eef1f5; padding:1px 5px; border-radius:5px; font-size:0.8rem; }
+
+    .law { margin-top:18px; font-size:0.8rem; color:var(--muted); background:#f2f0ff; border:1px solid #d9d3ff; border-radius:12px; padding:14px 16px; line-height:1.6; }
+    .law b { color:#5b3fdc; }
   </style>
 </head>
 <body>
 <div class="wrap">
   <h1>Heizkostenabrechnung</h1>
-  <p class="sub">Öl-Zentralheizung · Berechnung nach Heizkostenverordnung §9</p>
+  <p class="sub">Eine vermietete Wohnung in einem Haus mit Zentralheizung · nur die Werte ausfüllen, den Rest rechnet die Seite</p>
 
+  <!-- 1. Mietobjekt & Mieter -->
   <div class="card">
+    <h2><span class="n">1</span>Mieter &amp; Wohnung</h2>
     <div class="field">
-      <label>Literpreis des Heizöls <span class="hint">(€ pro Liter, z.B. aus der Rechnung)</span></label>
-      <input id="ip" type="number" inputmode="decimal" min="0" step="0.001" placeholder="z.B. 1,10">
+      <label>Mieter Name</label>
+      <input id="mieter" type="text" placeholder="z.B. Max Mustermann">
     </div>
     <div class="field">
-      <label>Verbrauchtes Heizöl insgesamt <span class="hint">(Liter, z.B. aus Rechnung oder Tankuhr)</span></label>
-      <input id="oil" type="number" inputmode="decimal" min="0" step="1" placeholder="z.B. 1500">
+      <label>Wohnung / Lage</label>
+      <input id="lage" type="text" placeholder="z.B. 2. OG rechts">
     </div>
-    <div class="field">
-      <label>Warmwasser-Zählerstand Anfang <span class="hint">(m³ am ersten Tag)</span></label>
-      <input id="w1" type="number" inputmode="decimal" min="0" step="0.001" placeholder="z.B. 120,500">
+    <div class="pair">
+      <div class="field">
+        <label>Abrechnungszeitraum <span class="hint">von</span></label>
+        <input id="zrV" type="text" placeholder="01.01.">
+      </div>
+      <div class="field">
+        <label>&nbsp;<span class="hint">bis</span></label>
+        <input id="zrB" type="text" placeholder="31.12.">
+      </div>
     </div>
-    <div class="field">
-      <label>Warmwasser-Zählerstand Ende <span class="hint">(m³ am letzten Tag)</span></label>
-      <input id="w2" type="number" inputmode="decimal" min="0" step="0.001" placeholder="z.B. 150,000">
-    </div>
-    <button class="btn" id="go">Heizkosten berechnen</button>
   </div>
 
-  <div class="result" id="res">
-    <div class="total">
-      <div class="lab">Gesamte Heizkosten</div>
-      <div class="val" id="tot">–</div>
+  <!-- 2. Heizöl -->
+  <div class="card">
+    <h2><span class="n">2</span>Heizöl (Brennstoffkosten)</h2>
+    <div class="field">
+      <label>Literpreis des Heizöls <span class="hint">(€ pro Liter, z.B. aus der Rechnung)</span></label>
+      <input id="lp" type="number" inputmode="decimal" min="0" step="0.001" placeholder="z.B. 1,15">
     </div>
     <div class="break">
-      <div class="row heiz"><span>Heizung</span><span class="amt" id="hCost">–</span></div>
-      <div class="row warm"><span>Warmwasser</span><span class="amt" id="wCost">–</span></div>
-      <div class="row note"><span>davon Ölverbrauch Heizung</span><span id="hOil">–</span></div>
-      <div class="row note"><span>davon Ölverbrauch Warmwasser</span><span id="wOil">–</span></div>
+      <div class="row soft"><span>Berechneter Preis pro kWh</span><span class="amt" id="preisKwh">–</span></div>
+      <div class="row soft"><span>Grundlage</span><span class="amt">10 kWh &nbsp;≈&nbsp; 1 Liter Heizöl</span></div>
+    </div>
+  </div>
+
+  <!-- 3. Verbrauch (Uhr) -->
+  <div class="card">
+    <h2><span class="n">3</span>Verbrauch der Wohnung</h2>
+    <p style="font-size:0.83rem;color:var(--muted);margin-bottom:14px;">Werte vom Wärmemengen-/Warmwasserzähler („Uhr“) ablesen und eintragen.</p>
+    <div class="field">
+      <label>Verbrauch Raumheizung <span class="hint">(kWh)</span></label>
+      <input id="vh" type="number" inputmode="decimal" min="0" step="0.1" placeholder="z.B. 4200">
+    </div>
+    <div class="field">
+      <label>Verbrauch Warmwasser <span class="hint">(kWh oder m³)</span></label>
+      <input id="vw" type="number" inputmode="decimal" min="0" step="0.1" placeholder="z.B. 950">
+    </div>
+    <label style="margin-top:2px;">
+      <select id="einheitVw" style="width:100%;padding:11px;border:1px solid #c7ced8;border-radius:10px;font-size:1rem;background:#fff;">
+        <option value="kwh">Warmwasser in kWh</option>
+        <option value="m3">Warmwasser in m³ (umgerechnet)</option>
+      </select>
+    </label>
+  </div>
+
+  <!-- 4. Kalte Betriebskosten -->
+  <div class="card">
+    <h2><span class="n">4</span>Weitere kalte Betriebskosten</h2>
+    <p style="font-size:0.78rem;color:var(--muted);margin-bottom:10px;">Nur ausfüllen, was auf den Mieter umgelegt wird. Leer lassen, wenn nicht zutrifft.</p>
+    <div class="field"><label>Müllgebühren <span class="hint">(€)</span></label><input id="k1" type="number" inputmode="decimal" min="0" step="0.01" placeholder="—"></div>
+    <div class="field"><label>Kaminfeger / Schornsteinfeger <span class="hint">(€)</span></label><input id="k2" type="number" inputmode="decimal" min="0" step="0.01" placeholder="—"></div>
+    <div class="field"><label>Heizung Wartung <span class="hint">(€)</span></label><input id="k3" type="number" inputmode="decimal" min="0" step="0.01" placeholder="—"></div>
+    <div class="field"><label>Grundsteuer <span class="hint">(€)</span></label><input id="k4" type="number" inputmode="decimal" min="0" step="0.01" placeholder="—"></div>
+    <div class="field"><label>Gebäudeversicherung <span class="hint">(€)</span></label><input id="k5" type="number" inputmode="decimal" min="0" step="0.01" placeholder="—"></div>
+    <div class="field"><label>Sonstiges <span class="hint">(€)</span></label><input id="k6" type="number" inputmode="decimal" min="0" step="0.01" placeholder="—"></div>
+  </div>
+
+  <!-- 5. Vorauszahlungen -->
+  <div class="card">
+    <h2><span class="n">5</span>Vorauszahlungen des Mieters</h2>
+    <div class="pair">
+      <div class="field">
+        <label>Monatlicher Abschlag <span class="hint">(€)</span></label>
+        <input id="abs" type="number" inputmode="decimal" min="0" step="0.01" placeholder="z.B. 150">
+      </div>
+      <div class="field">
+        <label>Anzahl Monate</label>
+        <input id="mon" type="number" inputmode="numeric" min="0" step="1" value="12" placeholder="12">
+      </div>
+    </div>
+  </div>
+
+  <button class="btn" id="go">Abrechnung berechnen</button>
+
+  <div class="result" id="res">
+    <div class="total" id="totalBox">
+      <div class="lab" id="totalLab">Nachzahlung</div>
+      <div class="val" id="totalVal">–</div>
+      <div class="subv" id="totalSub"></div>
+    </div>
+
+    <div class="break">
+      <div class="row head"><span>Position</span><span>Betrag</span></div>
+      <div class="row soft"><span>Heizöl-Heizkosten</span><span class="amt" id="lineH">–</span></div>
+      <div class="row soft"><span>davon Raumheizung</span><span class="amt" id="lineHR">–</span></div>
+      <div class="row soft"><span>davon Warmwasser</span><span class="amt" id="lineHW">–</span></div>
+      <div class="row soft"><span>Kalte Betriebskosten</span><span class="amt" id="lineK">–</span></div>
+      <div class="row head"><span>Gesamtkosten</span><span class="amt" id="lineGesamt">–</span></div>
+      <div class="row">Vorauszahlungen <span class="amt" id="lineVor">–</span></div>
     </div>
   </div>
 
   <div class="calc">
     <h2>So wird gerechnet</h2>
-    <div><b>1.</b> Warmwasserverbrauch: <code>V = Stand Ende − Stand Anfang</code> (m³)</div>
-    <div><b>2.</b> Energie für Warmwasser: <code>Q = 2,5 × V × 50</code> (kWh)<br><span style="color:var(--muted)">— bei einer Warmwassertemperatur von 60 °C und Kaltwasser 10 °C</span></div>
-    <div><b>3.</b> Dafür nötiges Öl: <code>B = Q ÷ 10</code> Liter <span style="color:var(--muted)">(Heizwert Heizöl = 10 kWh/L)</span></div>
-    <div><b>4.</b> Heizöl für die Heizung: <code>gesamt − B</code> Liter</div>
-    <div><b>5.</b> Kosten: <code>Liter × Literpreis</code> je Anteil</div>
+    <div><b>1.</b> Preis pro kWh: <code>Literpreis ÷ 10</code></div>
+    <div><b>2.</b> Heizkosten: <code>Verbrauch (kWh) × Preis pro kWh</code></div>
+    <div><b>3.</b> + kalte Betriebskosten = Gesamtkosten</div>
+    <div><b>4.</b> deriv. Nachzahlung / Guthaben: <code>Gesamtkosten − Vorauszahlungen</code></div>
+  </div>
+
+  <div class="law">
+    <b>Rechtsgrundlage:</b> Heizkostenverordnung (HeizkostenV) § 7 – Verteilung der Heizungskosten, § 8 – Verteilung der Warmwasserkosten, § 9 – anteiliger Brennstoff für Warmwasser. Heizwert Heizöl ≈ 10 kWh pro Liter. Der Vermieter muss einen Verteilerschlüssel anwenden; bei vorhandenem Zähler wird nach erfasstem Verbrauch der Wohnung verteilt.
   </div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
   var go = document.getElementById('go');
-  function num(id) { return parseFloat(document.getElementById(id).value.replace(',', '.')) || 0; }
-  function fmt(n) { return n.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'; }
-  function fmtL(n) { return n.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' L'; }
+  function num(id) { var v = document.getElementById(id).value.replace(',', '.'); return parseFloat(v) || 0; }
+  function fmtEUR(n) {
+    var s = n.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return s + ' €';
+  }
+  function fmtKwh(n) {
+    return n.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' kWh';
+  }
+  function fmtPreis(n) {
+    return n.toLocaleString('de-DE', { minimumFractionDigits: 3, maximumFractionDigits: 3 }) + ' €/kWh';
+  }
+
+  function updatePreis() {
+    var lp = num('lp');
+    var preis = lp > 0 ? lp / 10 : 0;
+    document.getElementById('preisKwh').textContent = preis > 0 ? fmtPreis(preis) : '–';
+  }
 
   go.addEventListener('click', function () {
-    var preis = num('ip'), gesamt = num('oil'), v1 = num('w1'), v2 = num('w2');
-    if (preis <= 0 || gesamt <= 0 || v2 <= v1) {
-      alert('Bitte Literpreis, Ölverbrauch und einen gültigen Warmwasser-Zählerstand (Anfang < Ende) eingeben.');
-      return;
-    }
-    var V = v2 - v1;                  // m³ Warmwasser
-    var Q = 2.5 * V * 50;             // kWh für Warmwasser (60°C − 10°C)
-    var B = Q / 10;                   // Liter Öl für Warmwasser (Heizwert 10)
-    B = Math.min(B, gesamt);
-    var BHeiz = gesamt - B;
+    var lp = num('lp');
+    var vh = num('vh');
+    var vw = num('vw');
+    var einheitVw = document.getElementById('einheitVw').value;
+    if (lp <= 0) { alert('Bitte den Literpreis des Heizöls (€/L) eintragen.'); return; }
 
-    document.getElementById('tot').textContent = fmt(gesamt * preis);
-    document.getElementById('hCost').textContent = fmt(BHeiz * preis);
-    document.getElementById('wCost').textContent = fmt(B * preis);
-    document.getElementById('hOil').textContent = fmtL(BHeiz);
-    document.getElementById('wOil').textContent = fmtL(Math.max(B, 0));
+    // Warmwasser in m³ -> kWh (Heizwert-bezogen, HKVO §9): 1 m³ Warmwasser (60°C) ≈ 125 kWh
+    var vwKwh = vw;
+    if (einheitVw === 'm3') vwKwh = vw * 125;
+
+    var preis = lp / 10;
+    var kostenH = (vh + vwKwh) * preis;
+    var kostenHR = vh * preis;
+    var kostenHW = vwKwh * preis;
+    var kalt = num('k1') + num('k2') + num('k3') + num('k4') + num('k5') + num('k6');
+    var gesamt = kostenH + kalt;
+    var vor = num('abs') * num('mon');
+    var diff = gesamt - vor;
+
+    document.getElementById('preisKwh').textContent = fmtPreis(preis);
+
+    var totalBox = document.getElementById('totalBox');
+    var totalLab = document.getElementById('totalLab');
+    var totalSub = document.getElementById('totalSub');
+    if (diff > 0.005) {
+      totalBox.className = 'total pay';
+      totalLab.textContent = 'Nachzahlung';
+      totalSub.textContent = 'Differenz zum bereits Gezahlten';
+    } else {
+      totalBox.className = 'total back';
+      totalLab.textContent = 'Guthaben für den Mieter';
+      totalSub.textContent = diff > -0.005 ? 'Abrechnung ausgeglichen' : 'Dem Mieter zu erstatten';
+    }
+    document.getElementById('totalVal').textContent = fmtEUR(Math.abs(diff));
+
+    document.getElementById('lineH').textContent = fmtEUR(kostenH);
+    document.getElementById('lineHR').textContent = fmtEUR(kostenHR);
+    document.getElementById('lineHW').textContent = fmtEUR(kostenHW);
+    document.getElementById('lineK').textContent = fmtEUR(kalt);
+    document.getElementById('lineGesamt').textContent = fmtEUR(gesamt);
+    document.getElementById('lineVor').textContent = '− ' + fmtEUR(vor);
+
     document.getElementById('res').classList.add('show');
+    var res = document.getElementById('res');
+    res.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  ['lp','vh','vw'].forEach(function(id) {
+    document.getElementById(id).addEventListener('input', updatePreis);
   });
 });
 </script>
