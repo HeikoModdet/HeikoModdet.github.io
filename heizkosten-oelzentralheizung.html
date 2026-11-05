@@ -59,6 +59,8 @@
     .row { display:flex; justify-content:space-between; padding:11px 16px; font-size:0.93rem; border-bottom:1px solid #eef1f5; }
     .row:last-child { border-bottom:none; }
     .row.soft { color:var(--muted); font-size:0.85rem; }
+    .row.sub { color:var(--muted); font-size:0.8rem; padding:4px 16px 10px 28px; border-bottom:none; font-style:italic; justify-content:flex-start; }
+    .row.sub .amt { margin-left:auto; font-style:normal; }
     .row.head { background:#f6f8fb; font-weight:700; color:#2b3240; }
     .row .amt { font-weight:700; font-variant-numeric:tabular-nums; }
     .row .pos { color:var(--red); font-weight:800; }
@@ -184,9 +186,17 @@
     <div class="break">
       <div class="row head"><span>Position</span><span>Betrag</span></div>
       <div class="row soft"><span>Heizkosten</span><span class="amt" id="lineH">–</span></div>
+      <div class="row sub"><span id="lineHDet">–</span></div>
       <div class="row soft"><span>Kalte Betriebskosten</span><span class="amt" id="lineK">–</span></div>
+      <div class="row sub"><span id="kD1"></span><span class="amt" id="vD1"></span></div>
+      <div class="row sub"><span id="kD2"></span><span class="amt" id="vD2"></span></div>
+      <div class="row sub"><span id="kD3"></span><span class="amt" id="vD3"></span></div>
+      <div class="row sub"><span id="kD4"></span><span class="amt" id="vD4"></span></div>
+      <div class="row sub"><span id="kD5"></span><span class="amt" id="vD5"></span></div>
+      <div class="row sub"><span id="kD6"></span><span class="amt" id="vD6"></span></div>
       <div class="row head"><span>Gesamtkosten Wohnung</span><span class="amt" id="lineGesamt">–</span></div>
       <div class="row">Vorauszahlungen <span class="amt" id="lineVor">–</span></div>
+      <div class="row sub"><span id="lineVorDet">–</span></div>
     </div>
     <button class="btnPrint" id="printBtn">🖨️ Drucken / Als PDF speichern</button>
   </div>
@@ -238,9 +248,36 @@ document.addEventListener('DOMContentLoaded', function () {
 
     document.getElementById('preisKwh').textContent = fmtPreis(preis);
     document.getElementById('lineH').textContent = fmtEUR(heiz);
+    document.getElementById('lineHDet').textContent = vh.toLocaleString('de-DE') + ' kWh × ' + fmtPreis(preis);
     document.getElementById('lineK').textContent = fmtEUR(kalt);
+
+    // Kalte Betriebskosten aufgeschlüsselt (nur Positionen mit Betrag anzeigen)
+    var kaltPos = [['k1','Müllgebühren'],['k2','Kaminfeger / Schornsteinfeger'],['k3','Heizung Wartung'],
+                   ['k4','Grundsteuer'],['k5','Gebäudeversicherung'],['k6','Sonstiges']];
+    for (var i = 0; i < kaltPos.length; i++) {
+      var id = kaltPos[i][0], lab = kaltPos[i][1];
+      var val = num0(id);
+      var row = document.getElementById('kD' + (i+1)).parentNode;
+      var dLab = document.getElementById('kD' + (i+1));
+      var dVal = document.getElementById('vD' + (i+1));
+      if (val > 0) {
+        row.style.display = 'flex';
+        dLab.textContent = lab;
+        dVal.textContent = fmtEUR(val);
+      } else {
+        row.style.display = 'none';
+      }
+    }
+
     document.getElementById('lineGesamt').textContent = fmtEUR(gesamt);
     document.getElementById('lineVor').textContent = '− ' + fmtEUR(vor);
+    var absn = num('abs'), monn = num('mon');
+    if (absn !== null) {
+      document.getElementById('lineVorDet').textContent =
+        absn.toLocaleString('de-DE') + ' € × ' + ((monn !== null) ? monn : 0) + ' Monate';
+    } else {
+      document.getElementById('lineVorDet').textContent = '';
+    }
 
     var totalBox = document.getElementById('totalBox');
     var totalLab = document.getElementById('totalLab');
